@@ -56,6 +56,6 @@ Gem created by Richard Viney. All contributions welcome.
 [dependencies-link]: https://gemnasium.com/rviney/lightstreamer
 [dependencies-badge]: https://gemnasium.com/rviney/lightstreamer.svg
 [documentation-link]: https://inch-ci.org/github/rviney/lightstreamer
-[documentation-badge]: http://inch-ci.org/github/rviney/lightstreamer.svg?branch=master
+[documentation-badge]: https://inch-ci.org/github/rviney/lightstreamer.svg?branch=master
 [license-link]: https://github.com/rviney/lightstreamer/blob/master/LICENSE.md
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
