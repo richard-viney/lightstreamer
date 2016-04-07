@@ -7,4 +7,4 @@ rvm:
 script: bundle exec rspec
 addons:
   code_climate:
-    repo_token:
+    repo_token: dba2dd367a36791e103efe762691df99bd746ab5158efa08a17325941f409b0a
