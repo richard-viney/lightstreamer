@@ -1,4 +1,4 @@
-require 'rest-client'
+require 'net/http/persistent'
 
 require 'lightstreamer/version'
 

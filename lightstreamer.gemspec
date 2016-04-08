@@ -6,16 +6,15 @@ Gem::Specification.new do |s|
   s.version     = Lightstreamer::VERSION
   s.platform    = Gem::Platform::RUBY
   s.license     = 'MIT'
-  s.summary     = 'Lightstreamer client'
-  s.description = 'Client for accessing a Lightstreamer server'
+  s.summary     = 'Ruby client for accessing a Lightstreamer server.'
   s.homepage    = 'https://github.com/rviney/lightstreamer'
   s.author      = 'Richard Viney'
   s.email       = 'richard.viney@gmail.com'
-  s.files       = `git ls-files`.split("\n")
+  s.files       = Dir['lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
 
   s.required_ruby_version = '>= 2.0'
 
-  s.add_runtime_dependency 'rest-client', '~> 1.8'
+  s.add_runtime_dependency 'net-http-persistent', '~> 2.9'
 
   s.add_development_dependency 'codeclimate-test-reporter', '~> 0.4'
   s.add_development_dependency 'factory_girl', '~> 4.7'
