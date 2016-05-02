@@ -15,10 +15,6 @@ Easily interface with a Lightstreamer service from Ruby. Written against the
 
 Licensed under the MIT license. You must read and agree to its terms to use this software.
 
-## Requirements
-
-Ruby 2.0 or later.
-
 ## Installation
 
 Add the following to your `Gemfile`
@@ -32,14 +28,14 @@ Then run
 bundle install
 ```
 
+## Documentation
+
+API documentation is available [here](http://www.rubydoc.info/github/rviney/lightstreamer).
+
 ## Usage
 
 ```ruby
 ```
-
-## Documentation
-
-API documentation is available [here](http://www.rubydoc.info/github/rviney/lightstreamer).
 
 ## Contributors
 
