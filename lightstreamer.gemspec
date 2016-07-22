@@ -14,14 +14,21 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.0'
 
-  s.add_runtime_dependency 'net-http-persistent', '~> 2.9'
+  s.add_runtime_dependency 'rest-client', '~> 2.0'
 
-  s.add_development_dependency 'codeclimate-test-reporter', '~> 0.4'
+  # Use Active Support 4 on Ruby versions prior to 2.2.2
+  if RUBY_VERSION =~ /^2\.((0|1)\.|2\.(0|1)$)/
+    s.add_development_dependency 'activesupport', '~> 4.2'
+  else
+    s.add_development_dependency 'activesupport', '~> 5.0'
+  end
+
+  s.add_development_dependency 'codeclimate-test-reporter', '~> 0.6'
   s.add_development_dependency 'factory_girl', '~> 4.7'
   s.add_development_dependency 'github-markup', '~> 1.4'
   s.add_development_dependency 'redcarpet', '~> 3.3'
-  s.add_development_dependency 'rspec', '~> 3.4'
-  s.add_development_dependency 'rspec-mocks', '~> 3.4'
-  s.add_development_dependency 'rubocop', '~> 0.39'
-  s.add_development_dependency 'yard', '~> 0.8'
+  s.add_development_dependency 'rspec', '~> 3.5'
+  s.add_development_dependency 'rspec-mocks', '~> 3.5'
+  s.add_development_dependency 'rubocop', '~> 0.41'
+  s.add_development_dependency 'yard', '~> 0.9'
 end
