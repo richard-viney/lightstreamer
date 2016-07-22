@@ -105,8 +105,13 @@ module Lightstreamer
     # Starts the processing thread that reads and processes incoming data from the stream connection.
     def create_processing_thread
       @processing_thread = Thread.new do
-        loop do
-          process_stream_data @stream_connection.read_line
+        begin
+          loop do
+            process_stream_data @stream_connection.read_line
+          end
+        rescue StandardError => error
+          warn "Lightstreamer: exception in processing thread: #{error}"
+          exit 1
         end
       end
     end

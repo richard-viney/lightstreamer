@@ -27,9 +27,14 @@ module Lightstreamer
 
     def create_stream_thread
       @thread = Thread.new do
-        connect_stream_and_queue_data
+        begin
+          connect_stream_and_queue_data
 
-        warn 'Lightstreamer: stream connection closed'
+          warn 'Lightstreamer: stream connection closed'
+        rescue StandardError => error
+          warn "Lightstreamer: exception in stream thread: #{error}"
+          exit 1
+        end
       end
     end
 
