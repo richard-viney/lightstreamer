@@ -4,7 +4,7 @@ describe Lightstreamer::RequestError do
 
     expect(error.error).to eq('message')
     expect(error.http_code).to be_nil
-    expect(error.message).to eq('Request error: message>')
+    expect(error.message).to eq('Request error: message')
   end
 
   it 'constructs from an error message and HTTP code' do
