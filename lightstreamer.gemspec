@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version     = Lightstreamer::VERSION
   s.platform    = Gem::Platform::RUBY
   s.license     = 'MIT'
-  s.summary     = 'Ruby client for accessing a Lightstreamer server.'
+  s.summary     = 'Library and command-line client for accessing a Lightstreamer server.'
   s.homepage    = 'https://github.com/rviney/lightstreamer'
   s.author      = 'Richard Viney'
   s.email       = 'richard.viney@gmail.com'
