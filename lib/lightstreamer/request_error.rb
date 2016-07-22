@@ -15,7 +15,7 @@ module Lightstreamer
       @error = error.to_s
       @http_code = http_code ? http_code.to_i : nil
 
-      super "Request error: #{error}#{http_code ? ", http code: #{http_code}" : ''}>"
+      super "Request error: #{error}#{http_code ? ", http code: #{http_code}" : ''}"
     end
   end
 end

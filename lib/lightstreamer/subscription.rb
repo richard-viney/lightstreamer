@@ -74,7 +74,7 @@ module Lightstreamer
     # @return [Proc] The same `Proc` object that was passed to this method. This can be used to remove this data
     #         callback at a later stage using {#remove_data_callback}.
     def add_data_callback(&block)
-      raise ArgumentError, 'data callbacks must take three arguments' unless block.arity == 4
+      raise ArgumentError, 'Data callbacks must take four arguments' unless block.arity == 4
 
       @data_mutex.synchronize { @data_callbacks << block }
 
