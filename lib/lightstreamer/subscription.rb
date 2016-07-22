@@ -28,14 +28,14 @@ module Lightstreamer
     # @option options [Array<String>] :items The names of the items to subscribe to.
     # @option options [Array<String>] :fields The names of the fields to subscribe to on the items.
     # @option options [:distinct, :merge] :mode The operation mode of this subscription.
-    # @option options [adapter] The name of the data adapter from the Lightstreamer session's adapter set that should
-    #                 be used. If `nil` then the default data adapter will be used.
+    # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
+    #                 should be used. If `nil` then the default data adapter will be used.
     def initialize(options)
       @id = self.class.next_id
 
       @items = Array(options.fetch(:items))
       @fields = Array(options.fetch(:fields))
-      @mode = options.fetch :mode
+      @mode = options.fetch(:mode).to_sym
       @adapter = options[:adapter]
 
       @data_mutex = Mutex.new

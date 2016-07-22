@@ -10,11 +10,13 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/rviney/lightstreamer'
   s.author      = 'Richard Viney'
   s.email       = 'richard.viney@gmail.com'
-  s.files       = Dir['lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
+  s.files       = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
+  s.executables = ['lightstreamer']
 
   s.required_ruby_version = '>= 2.0'
 
   s.add_runtime_dependency 'rest-client', '~> 2.0'
+  s.add_runtime_dependency 'thor', '~> 0.19'
 
   # Use Active Support 4 on Ruby versions prior to 2.2.2
   if RUBY_VERSION =~ /^2\.((0|1)\.|2\.(0|1)$)/

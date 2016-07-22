@@ -23,7 +23,7 @@ Install the latest version of the `lightstreamer` gem with the following command
 $ gem install lightstreamer
 ```
 
-## Usage
+## Usage — Library
 
 ```ruby
 require 'lightstreamer'
@@ -36,11 +36,11 @@ session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com'
 session.connect
 
 # Create a new subscription that subscribes to five items and to four fields on each item
-subscription = Lightstreamer::Subscription.new items: [:item1, :item2, :item3, :item4, :item5],
+subscription = Lightstreamer::Subscription.new items: %w(item1 item2 item3 item4 item5),
                                                fields: [:time, :stock_name, :bid, :ask],
                                                mode: :merge, adapter: 'QUOTE_ADAPTER'
 
-# Create a thread-safe queue object
+# Create a thread-safe queue
 queue = Queue.new
 
 # When new data becomes available for the subscription it will be put on the queue. This callback
@@ -57,6 +57,26 @@ loop do
   data = queue.pop
   puts "#{data[:time]} - #{data[:stock_name]} - bid: #{data[:bid]}, ask: #{data[:ask]}"
 end
+```
+
+## Usage — Command-Line Client
+
+This gem also provides a simple command-line client that can connect to a Lightstreamer server, activate
+a subscription, and print streaming output from the server as it becomes available.
+
+To print streaming data from the demo server run the following command:
+
+```
+lightstreamer --address http://push.lightstreamer.com --adapter-set DEMO \
+              --items item1 item2 item3 item4 item5 \
+              --fields time stock_name bid ask bid \
+              --adapter QUOTE_ADAPTER
+```
+
+To see a full list of available options run the following command:
+
+```
+lightstreamer help stream
 ```
 
 ## Documentation
