@@ -1,3 +1,4 @@
+--exclude lib/lightstreamer/cli/.*
 --markup markdown
 --markup-provider redcarpet
 --no-private

@@ -25,10 +25,18 @@ $ gem install lightstreamer
 
 ## Usage — Library
 
+The two primary classes that make up the public API are:
+
+- [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Session)
+- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Subscription)
+
+The following code snippet demonstrates how to setup a Lightstreamer session, a subscription, then print streaming
+output as it comes in.
+
 ```ruby
 require 'lightstreamer'
 
-# Create a new session that connects to a Lightstreamer demo server which needs no authentication
+# Create a new session that connects to the Lightstreamer demo server, which needs no authentication
 session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com',
                                      adapter_set: 'DEMO', username: '', password: ''
 
@@ -52,7 +60,7 @@ end
 # Activate the subscription
 session.subscribe subscription
 
-# The main thread now loops printing out new data as it becomes available on the queue
+# Loop printing out new data as soon as it becomes available on the queue
 loop do
   data = queue.pop
   puts "#{data[:time]} - #{data[:stock_name]} - bid: #{data[:bid]}, ask: #{data[:ask]}"
@@ -61,16 +69,14 @@ end
 
 ## Usage — Command-Line Client
 
-This gem also provides a simple command-line client that can connect to a Lightstreamer server, activate
-a subscription, and print streaming output from the server as it becomes available.
+This gem provides a simple command-line client that can connect to a Lightstreamer server, activate a
+subscription, then print streaming output from the server as it becomes available.
 
 To print streaming data from the demo server run the following command:
 
 ```
-lightstreamer --address http://push.lightstreamer.com --adapter-set DEMO \
-              --items item1 item2 item3 item4 item5 \
-              --fields time stock_name bid ask bid \
-              --adapter QUOTE_ADAPTER
+lightstreamer --address http://push.lightstreamer.com --adapter-set DEMO --adapter QUOTE_ADAPTER \
+              --items item1 item2 item3 item4 item5 --fields time stock_name bid ask bid
 ```
 
 To see a full list of available options run the following command:
