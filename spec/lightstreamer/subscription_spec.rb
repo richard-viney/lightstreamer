@@ -26,7 +26,7 @@ describe Lightstreamer::Subscription do
     expect { subscription.clear_data_for_item :item3 }.to raise_error(ArgumentError)
   end
 
-  it 'correctly calls multiple data callbacks when new data arrives' do
+  it 'calls multiple data callbacks when new data arrives' do
     calls = []
 
     first_callback = subscription.add_data_callback { |*args| calls << args }
@@ -71,5 +71,13 @@ describe Lightstreamer::Subscription do
 
     expect(subscription.retrieve_item_data(:item1)).to eq({})
     expect(subscription.retrieve_item_data(:item2)).to eq({})
+  end
+
+  it 'reports exceptions that occur in data callbacks' do
+    subscription.add_data_callback { |*args| raise 'test' }
+
+    expect do
+      subscription.process_stream_data "#{subscription.id},1|a|b"
+    end.to output("Lightstreamer: exception occurred in a subscription data callback: test\n").to_stderr
   end
 end

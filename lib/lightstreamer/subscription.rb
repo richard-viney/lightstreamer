@@ -109,16 +109,16 @@ module Lightstreamer
     # @return [Boolean] Whether the passed line of stream data was relevant to this subscription and was successfully
     #         processed by it.
     def process_stream_data(line)
-      item_index, values = parse_stream_data line
+      item_index, new_values = parse_stream_data line
       return false unless item_index
 
       @data_mutex.synchronize do
         data = @data[item_index]
 
-        data << values if mode == :distinct
-        data.merge!(values) if mode == :merge
+        data << new_values if mode == :distinct
+        data.merge!(new_values) if mode == :merge
 
-        @data_callbacks.each { |callback| callback.call self, @items[item_index], data, values }
+        call_data_callbacks @items[item_index], data, new_values
       end
 
       true
@@ -187,6 +187,18 @@ module Lightstreamer
       # '\uXXXX\uYYYY'. They need to be transformed into native Unicode characters.
 
       value
+    end
+
+    # Invokes all of this subscription's data callbacks with the specified arguments. Any exceptions that occur in a
+    # data callback are reported on `stderr` but are otherwise ignored.
+    def call_data_callbacks(item_name, item_data, new_values)
+      @data_callbacks.each do |callback|
+        begin
+          callback.call self, item_name, item_data, new_values
+        rescue StandardError => error
+          warn "Lightstreamer: exception occurred in a subscription data callback: #{error}"
+        end
+      end
     end
   end
 end

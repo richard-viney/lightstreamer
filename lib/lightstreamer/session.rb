@@ -78,13 +78,20 @@ module Lightstreamer
       end
     end
 
+    # Returns whether the specified subscription is currently active on this session.
+    #
+    # @param [Subscription] subscription The subscription to return the status for.
+    #
+    # @return [Boolean] Whether the specified subscription is currently active on this session.
+    def subscribed?(subscription)
+      @subscriptions_mutex.synchronize { @subscriptions.include? subscription }
+    end
+
     # Unsubscribes this Lightstreamer session from the specified subscription.
     #
     # @param [Subscription] subscription The existing subscription to unsubscribe from.
     def unsubscribe(subscription)
-      @subscriptions_mutex.synchronize do
-        raise ArgumentError, 'Unknown subscription' unless @subscriptions.detect subscription
-      end
+      raise ArgumentError, 'Unknown subscription' unless subscribed? subscription
 
       @control_connection.execute table: subscription.id, operation: :delete
 
@@ -117,13 +124,10 @@ module Lightstreamer
     # Starts the processing thread that reads and processes incoming data from the stream connection.
     def create_processing_thread
       @processing_thread = Thread.new do
-        begin
-          loop do
-            process_stream_data @stream_connection.read_line
-          end
-        rescue StandardError => error
-          warn "Lightstreamer: exception in processing thread: #{error}"
-          exit 1
+        loop do
+          line = @stream_connection.read_line
+
+          process_stream_data line unless line.empty?
         end
       end
     end
@@ -131,8 +135,6 @@ module Lightstreamer
     # Processes a single line of incoming stream data by passing it to all the active subscriptions until one
     # successfully processes it. This method is always run on the processing thread.
     def process_stream_data(line)
-      return if line.empty?
-
       was_processed = @subscriptions_mutex.synchronize do
         @subscriptions.detect do |subscription|
           subscription.process_stream_data line
