@@ -34,8 +34,9 @@ module Lightstreamer
     # Creates a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
     # {ProtocolError} will be raised.
     def connect
+      return if @stream_connection
+
       @stream_connection = StreamConnection.new self
-      @subscriptions = []
 
       first_line = @stream_connection.read_line
 
@@ -58,6 +59,7 @@ module Lightstreamer
       end
 
       @processing_thread = @stream_connection = @control_connection = nil
+      @subscriptions = []
     end
 
     # Subscribes this Lightstreamer session to the specified subscription.

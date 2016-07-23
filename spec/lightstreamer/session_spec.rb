@@ -7,13 +7,15 @@ describe Lightstreamer::Session do
   let(:stream_connection) { instance_double 'Lightstreamer::StreamConnection', disconnect: nil }
   let(:control_connection) { instance_double 'Lightstreamer::ControlConnection' }
 
+  let(:subscription) { build :subscription, items: ['item'], fields: ['field'] }
+
   def expect_stream_data(*lines)
     lines.each do |line|
       expect(stream_connection).to receive(:read_line).and_return(line)
     end
   end
 
-  it '' do
+  it 'connects to a stream and processes its data' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
 
     expect(Lightstreamer::ControlConnection).to receive(:new)
@@ -21,12 +23,19 @@ describe Lightstreamer::Session do
       .and_return(control_connection)
 
     expect_stream_data 'OK', 'SessionId:session_id', 'ControlAddress:test2.com', 'KeepaliveMillis:5000',
-                       'MaxBandwidth:0', ''
+                       'MaxBandwidth:0', '', "#{subscription.id},1|test", 'invalid data'
 
-    allow(stream_connection).to receive(:read_line).and_return('')
+    expect(stream_connection).to receive(:read_line) { Thread.exit }
 
-    session.connect
-    session.disconnect
+    session.instance_variable_set :@subscriptions, [subscription]
+    expect(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
+    expect(subscription).to receive(:process_stream_data).with('invalid data').and_return(false)
+
+    expect do
+      session.connect
+      session.instance_variable_get(:@processing_thread).join
+      session.disconnect
+    end.to output("Lightstreamer: unprocessed stream data 'invalid data'\n").to_stderr
   end
 
   it 'handles when the stream connection fails to connect' do
@@ -40,8 +49,6 @@ describe Lightstreamer::Session do
       expect(error.code).to eq(10)
     end
   end
-
-  let(:subscription) { build :subscription, items: ['item'], fields: ['field'] }
 
   it 'subscribes to new subscriptions' do
     session.instance_variable_set :@control_connection, control_connection

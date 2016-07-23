@@ -74,7 +74,7 @@ describe Lightstreamer::Subscription do
   end
 
   it 'reports exceptions that occur in data callbacks' do
-    subscription.add_data_callback { |*args| raise 'test' }
+    subscription.add_data_callback { raise 'test' }
 
     expect do
       subscription.process_stream_data "#{subscription.id},1|a|b"
