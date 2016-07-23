@@ -4,7 +4,7 @@ module Lightstreamer
     class Main < Thor
       desc 'stream', 'Streams a set of items and fields from a Lightstreamer server and prints the live output'
 
-      option :address, required: true, desc: 'The address of the Lightstreamer server'
+      option :server_url, required: true, desc: 'The URL of the Lightstreamer server'
       option :username, desc: 'The username for the session'
       option :password, desc: 'The password for the session'
       option :adapter_set, desc: 'The name of the adapter set for the session'
@@ -30,7 +30,7 @@ module Lightstreamer
 
       # Creates a new session from the specified options.
       def create_session
-        Lightstreamer::Session.new server_url: options[:address], username: options[:username],
+        Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
                                    password: options[:password], adapter_set: options[:adapter_set]
       end
 
@@ -39,11 +39,13 @@ module Lightstreamer
         subscription = Lightstreamer::Subscription.new items: options[:items], fields: options[:fields],
                                                        mode: options[:mode], adapter: options[:adapter]
 
-        subscription.add_data_callback do |_subscription, item_name, _item_data, new_values|
-          @queue.push "#{item_name} - #{new_values.map { |key, value| "#{key}: #{value}" }.join ', '}"
-        end
+        subscription.add_data_callback(&method(:subscription_data_callback))
 
         subscription
+      end
+
+      def subscription_data_callback(_subscription, item_name, _item_data, new_values)
+        @queue.push "#{item_name} - #{new_values.map { |key, value| "#{key}: #{value}" }.join ', '}"
       end
     end
   end

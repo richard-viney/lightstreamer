@@ -75,7 +75,7 @@ subscription, then print streaming output from the server as it becomes availabl
 To print streaming data from the demo server run the following command:
 
 ```
-lightstreamer --address http://push.lightstreamer.com --adapter-set DEMO --adapter QUOTE_ADAPTER \
+lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO --adapter QUOTE_ADAPTER \
               --items item1 item2 item3 item4 item5 --fields time stock_name bid ask bid
 ```
 

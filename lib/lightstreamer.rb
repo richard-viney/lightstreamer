@@ -11,7 +11,7 @@ require 'lightstreamer/subscription'
 require 'lightstreamer/version'
 
 require 'lightstreamer/cli/main'
-require 'lightstreamer/cli/stream_command'
+require 'lightstreamer/cli/commands/stream_command'
 
 # This module contains all the code for the Lightstreamer gem. See `README.md` to get started with using this gem.
 module Lightstreamer
