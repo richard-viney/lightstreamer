@@ -14,7 +14,7 @@ module Lightstreamer
     # @param [Integer] code The numeric code for the error.
     def initialize(error, code)
       @error = error.to_s
-      @http_code = code.to_i
+      @code = code.to_i
 
       super "Lightstreamer error: #{@error}, code: #{code}"
     end

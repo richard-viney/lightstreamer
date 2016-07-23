@@ -48,6 +48,18 @@ module Lightstreamer
       end
     end
 
+    # Disconnects this session and shuts down its stream and processing threads.
+    def disconnect
+      @stream_connection.disconnect if @stream_connection
+
+      if @processing_thread
+        Thread.kill @processing_thread
+        @processing_thread.join
+      end
+
+      @processing_thread = @stream_connection = @control_connection = nil
+    end
+
     # Subscribes this Lightstreamer session to the specified subscription.
     #
     # @param [Subscription] subscription The new subscription to subscribe to.
@@ -119,6 +131,8 @@ module Lightstreamer
     # Processes a single line of incoming stream data by passing it to all the active subscriptions until one
     # successfully processes it. This method is always run on the processing thread.
     def process_stream_data(line)
+      return if line.empty?
+
       was_processed = @subscriptions_mutex.synchronize do
         @subscriptions.detect do |subscription|
           subscription.process_stream_data line

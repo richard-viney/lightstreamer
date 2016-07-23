@@ -2,6 +2,9 @@ module Lightstreamer
   # Manages a long-running Lightstreamer connection that handles incoming streaming data on a separate thread and
   # makes it available for consumption via the {#read_line} method.
   class StreamConnection
+    # @return [Thread] The thread used to process incoming streaming data.
+    attr_reader :thread
+
     # Establishes a new stream connection using the authentication details from the passed session.
     #
     # @param [Session] session The session to create a stream connection for.
@@ -11,6 +14,14 @@ module Lightstreamer
 
       create_stream
       create_stream_thread
+    end
+
+    # Disconnects this stream connection by shutting down the streaming thread.
+    def disconnect
+      return unless @thread
+
+      Thread.kill @thread
+      @thread.join
     end
 
     # Reads the next line of streaming data. This method blocks the calling thread until a line of data is available.
@@ -29,8 +40,6 @@ module Lightstreamer
       @thread = Thread.new do
         begin
           connect_stream_and_queue_data
-
-          warn 'Lightstreamer: stream connection closed'
         rescue StandardError => error
           warn "Lightstreamer: exception in stream thread: #{error}"
           exit 1

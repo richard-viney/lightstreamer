@@ -8,12 +8,6 @@ describe Lightstreamer::StreamConnection do
   let(:http_request) { instance_double 'Net::HTTPRequest' }
   let(:http_response) { instance_double 'Net::HTTPResponse' }
 
-  def run_stream_connection
-    Lightstreamer::StreamConnection.new(session).tap do |stream_connection|
-      stream_connection.instance_variable_get(:@thread).join
-    end
-  end
-
   before do
     body = 'LS_op2=create&LS_cid=mgQkwtwdysogQz2BJ4Ji+kOj2Bg&LS_user=username&LS_password=password&LS_adapter_set=set'
 
@@ -26,19 +20,20 @@ describe Lightstreamer::StreamConnection do
     expect(http_stream).to receive(:request).with(http_request).and_yield(http_response)
     expect(http_response).to receive(:read_body).and_yield("ONE\r\n").and_yield("PROBE\r\n").and_yield("TWO\r\n")
 
-    expect do
-      stream_connection = run_stream_connection
+    stream_connection = Lightstreamer::StreamConnection.new session
 
-      expect(stream_connection.read_line).to eq('ONE')
-      expect(stream_connection.read_line).to eq('TWO')
-    end.to output("Lightstreamer: stream connection closed\n").to_stderr
+    expect(stream_connection.read_line).to eq('ONE')
+    expect(stream_connection.read_line).to eq('TWO')
+
+    stream_connection.disconnect
   end
 
   it 'reports and exits when an exception occurs on the stream thread' do
     expect(http_stream).to receive(:request).with(http_request).and_raise(StandardError)
 
     expect do
-      run_stream_connection
+      stream_connection = Lightstreamer::StreamConnection.new session
+      stream_connection.thread.join
     end.to output("Lightstreamer: exception in stream thread: StandardError\n").to_stderr.and raise_error(SystemExit)
   end
 end
