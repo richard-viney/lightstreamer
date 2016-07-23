@@ -34,7 +34,7 @@ describe Lightstreamer::Subscription do
 
     expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2|c|")).to be true
-    expect(subscription.process_stream_data("#{subscription.id},3|d|e")).to be false
+    expect(subscription.process_stream_data('0,3|d|e')).to be false
 
     expect(calls.count).to eq(4)
     expect(calls[0]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
@@ -47,14 +47,17 @@ describe Lightstreamer::Subscription do
   end
 
   it 'processes stream data' do
+    id = subscription.id
+
     [
       { line: '', item1: {}, item2: {} },
-      { line: "#{subscription.id},1|a|b", item1: { field1: 'a', field2: 'b' }, item2: {} },
-      { line: "#{subscription.id},2|$|$", item1: { field1: 'a', field2: 'b' }, item2: { field1: '', field2: '' } },
-      { line: "#{subscription.id},2|c|d", item1: { field1: 'a', field2: 'b' }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{subscription.id},1|e|#", item1: { field1: 'e', field2: nil }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{subscription.id},1|$$|##", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{subscription.id},2||", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } }
+      { line: "#{id},1|a|b", item1: { field1: 'a', field2: 'b' }, item2: {} },
+      { line: "#{id},2|$|$", item1: { field1: 'a', field2: 'b' }, item2: { field1: '', field2: '' } },
+      { line: "#{id},2|c|d", item1: { field1: 'a', field2: 'b' }, item2: { field1: 'c', field2: 'd' } },
+      { line: "#{id},1|e|#", item1: { field1: 'e', field2: nil }, item2: { field1: 'c', field2: 'd' } },
+      { line: "#{id},1|$$|##", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } },
+      { line: "#{id},2||", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } },
+      { line: "#{id},1|\\u0040|", item1: { field1: '@', field2: '#' }, item2: { field1: 'c', field2: 'd' } }
     ].each do |hash|
       subscription.process_stream_data hash[:line]
 

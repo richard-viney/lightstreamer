@@ -2,7 +2,7 @@
 
 ### 0.3 — Unreleased
 
-- 
+- Correctly handle UTF-16 escape sequences in stream data, including UTF-16 surrogate pairs
 
 ### 0.2 — July 23, 2016
 

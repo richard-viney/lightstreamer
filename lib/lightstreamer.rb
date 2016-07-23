@@ -8,6 +8,7 @@ require 'lightstreamer/request_error'
 require 'lightstreamer/session'
 require 'lightstreamer/stream_connection'
 require 'lightstreamer/subscription'
+require 'lightstreamer/utf16'
 require 'lightstreamer/version'
 
 require 'lightstreamer/cli/main'

@@ -183,10 +183,7 @@ module Lightstreamer
 
       value = value[1..-1] if value =~ /^(\$|#)/
 
-      # TODO: parse any non-ASCII characters which are specified as UTF-16 escape sequences in the form '\uXXXX' or
-      # '\uXXXX\uYYYY'. They need to be transformed into native Unicode characters.
-
-      value
+      UTF16.decode_escape_sequences value
     end
 
     # Invokes all of this subscription's data callbacks with the specified arguments. Any exceptions that occur in a
