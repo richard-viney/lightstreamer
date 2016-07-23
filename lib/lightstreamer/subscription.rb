@@ -8,10 +8,10 @@ module Lightstreamer
     #                  in incoming Lightstreamer data.
     attr_reader :id
 
-    # @return [Array<String>] The names of the items to subscribe to.
+    # @return [Array] The names of the items to subscribe to.
     attr_reader :items
 
-    # @return [Array<String>] The names of the fields to subscribe to on the items.
+    # @return [Array] The names of the fields to subscribe to on the items.
     attr_reader :fields
 
     # @return [:distinct, :merge] The operation mode of this subscription.
@@ -25,8 +25,8 @@ module Lightstreamer
     # {Session#subscribe} to activate the subscription on a Lightstreamer session.
     #
     # @param [Hash] options The options to create the subscription with.
-    # @option options [Array<String>] :items The names of the items to subscribe to.
-    # @option options [Array<String>] :fields The names of the fields to subscribe to on the items.
+    # @option options [Array] :items The names of the items to subscribe to.
+    # @option options [Array] :fields The names of the fields to subscribe to on the items.
     # @option options [:distinct, :merge] :mode The operation mode of this subscription.
     # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
     #                 should be used. If `nil` then the default data adapter will be used.
@@ -55,7 +55,7 @@ module Lightstreamer
     # Clears the current data stored for the specified item. This is important to do when {#mode} is `:distinct` as
     # otherwise the incoming data will build up indefinitely.
     #
-    # @param [String] item_name The name of the item to clear the current data of.
+    # @param [String] item_name The name of the item to clear the current data for.
     def clear_data_for_item(item_name)
       index = @items.index item_name
       raise ArgumentError, 'Unrecognized item name' unless index
@@ -74,8 +74,6 @@ module Lightstreamer
     # @return [Proc] The same `Proc` object that was passed to this method. This can be used to remove this data
     #         callback at a later stage using {#remove_data_callback}.
     def add_data_callback(&block)
-      raise ArgumentError, 'Data callbacks must take four arguments' unless block.arity == 4
-
       @data_mutex.synchronize { @data_callbacks << block }
 
       block
@@ -172,22 +170,22 @@ module Lightstreamer
       values.each_with_index do |value, index|
         next if value == ''
 
-        # These conversions are specified in the Lightstreamer specification
-        value = '' if value == '$'
-        value = nil if value == '#'
-        value = value[1..-1] if value =~ /^($|#)/
-
-        hash[fields[index]] = convert_utf16_characters value
+        hash[fields[index]] = parse_raw_field_value value
       end
 
       hash
     end
 
-    # Non-ASCII characters are transmitted as UTF-16 escape sequences in the form '\uXXXX' or '\uXXXX\uYYYY'. This
-    # method is respnsible for converting such escape sequences into native Unicode characters.
-    #
-    # @todo Implement this method.
-    def convert_utf16_characters(value)
+    # Parses a raw field value according to to the Lightstreamer specification.
+    def parse_raw_field_value(value)
+      return '' if value == '$'
+      return nil if value == '#'
+
+      value = value[1..-1] if value =~ /^(\$|#)/
+
+      # TODO: parse any non-ASCII characters which are specified as UTF-16 escape sequences in the form '\uXXXX' or
+      # '\uXXXX\uYYYY'. They need to be transformed into native Unicode characters.
+
       value
     end
   end
