@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.3 — Unreleased
+
+- 
+
 ### 0.2 — July 23, 2016
 
 - Added complete test suite
