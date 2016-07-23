@@ -38,6 +38,6 @@ describe Lightstreamer::CLI::Main do
     cli.instance_variable_set :@queue, queue
     expect(queue).to receive(:push).with('item - field1: 1, field2: 2')
 
-    cli.send(:subscription_data_callback, subscription, 'item', {}, { field1: '1', field2: '2'})
+    cli.send(:subscription_data_callback, subscription, 'item', {}, field1: '1', field2: '2')
   end
 end

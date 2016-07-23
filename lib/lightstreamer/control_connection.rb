@@ -26,10 +26,7 @@ module Lightstreamer
     def execute(options)
       result = execute_post_request build_payload(options)
 
-      return if result.first == 'OK'
-      raise ProtocolError, result[2], result[1] if result.first == 'ERROR'
-
-      warn "Lightstreamer: unexpected response from server: #{result}"
+      raise ProtocolError.new(result[2], result[1]) if result.first == 'ERROR'
     end
 
     private

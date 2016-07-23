@@ -137,7 +137,7 @@ module Lightstreamer
       @stream_connection = nil
       @control_connection = nil
 
-      raise ProtocolError, error_message, error_code
+      raise ProtocolError.new(error_message, error_code)
     end
   end
 end
