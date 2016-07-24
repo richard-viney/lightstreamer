@@ -4,32 +4,46 @@ describe Lightstreamer::StreamConnection do
                                               password: 'password', adapter_set: 'set'
   end
 
-  let(:http_stream) { instance_double 'Net::HTTP' }
-  let(:http_create_request) { instance_double 'Net::HTTPRequest' }
-  let(:http_create_response) { instance_double 'Net::HTTPResponse' }
+  let(:create_request) { instance_double 'Typhoeus::Request' }
+  let(:create_response) { instance_double 'Typhoeus::Response' }
+  let(:create_params) do
+    { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: 'username', LS_password: 'password',
+      LS_adapter_set: 'set' }
+  end
 
   before do
-    expect(Net::HTTP).to receive(:new).with('test.com', 80).and_return(http_stream)
-    expect(Net::HTTP::Post).to receive(:new).with('/lightstreamer/create_session.txt').and_return(http_create_request)
-
-    body = 'LS_op2=create&LS_cid=mgQkwtwdysogQz2BJ4Ji+kOj2Bg&LS_user=username&LS_password=password&LS_adapter_set=set'
-    expect(http_create_request).to receive(:body=).with(body)
+    expect(Typhoeus::Request).to receive(:new)
+      .with('http://test.com/lightstreamer/create_session.txt', method: :post, params: create_params)
+      .and_return(create_request)
   end
 
   it 'creates and runs a stream connection' do
-    expect(http_stream).to receive(:request).with(http_create_request).and_yield(http_create_response)
-    expect(http_create_response).to receive(:read_body).and_yield("OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n")
+    bind_request = instance_double 'Typhoeus::Request'
+    bind_params = { LS_session: 'A' }
 
-    http_bind_request = instance_double 'Net::HTTPRequest'
-    http_bind_response = instance_double 'Net::HTTPResponse'
+    on_body_block = nil
 
-    expect(Net::HTTP::Post).to receive(:new).with('/lightstreamer/bind_session.txt').and_return(http_bind_request)
-    expect(http_bind_request).to receive(:body=).with('LS_session=A')
-    expect(http_stream).to receive(:request).with(http_bind_request).and_yield(http_bind_response)
-    expect(http_bind_response).to receive(:read_body).and_yield("OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n")
+    expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
+    expect(create_request).to receive(:on_complete)
+    expect(create_request).to receive(:run) do
+      on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
+    end
+
+    expect(Typhoeus::Request).to receive(:new)
+      .with('http://test.com/lightstreamer/bind_session.txt', method: :post, params: bind_params)
+      .and_return(bind_request)
+
+    expect(bind_request).to receive(:on_body) { |&block| on_body_block = block }
+    expect(bind_request).to receive(:on_complete)
+    expect(bind_request).to receive(:run) do
+      on_body_block.call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n"
+      sleep
+    end
 
     stream_connection = Lightstreamer::StreamConnection.new session
     stream_connection.connect
+
+    expect(stream_connection.connected?).to be true
 
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')
@@ -37,14 +51,39 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.read_line).to eq('four')
 
     stream_connection.disconnect
+
+    expect(stream_connection.connected?).to be false
   end
 
-  it 'reports and exits when an exception occurs on the stream thread' do
-    expect(http_stream).to receive(:request).with(http_create_request).and_raise(StandardError)
+  it 'handles an exception on the stream thread' do
+    expect(create_request).to receive(:on_body).and_raise('test')
 
-    expect do
-      stream_connection = Lightstreamer::StreamConnection.new session
-      stream_connection.connect
-    end.to output("Lightstreamer: exception in stream thread: StandardError\n").to_stderr.and raise_error(SystemExit)
+    stream_connection = Lightstreamer::StreamConnection.new session
+
+    expect { stream_connection.connect }.to raise_error('test')
+
+    expect(stream_connection.error.message).to eq('test')
+    expect(stream_connection.connected?).to be false
+  end
+
+  it 'handles an HTTP error on the stream thread' do
+    on_complete_block = nil
+
+    expect(create_request).to receive(:on_body)
+    expect(create_request).to receive(:on_complete) { |&block| on_complete_block = block }
+
+    expect(create_request).to receive(:run) do
+      on_complete_block.call create_response
+    end
+
+    expect(create_response).to receive(:success?).and_return(false)
+    expect(create_response).to receive(:return_message).and_return('Error message')
+    expect(create_response).to receive(:response_code).and_return(404)
+
+    expect { Lightstreamer::StreamConnection.new(session).connect }.to raise_error do |error|
+      expect(error).to be_a(Lightstreamer::RequestError)
+      expect(error.error).to eq('Error message')
+      expect(error.http_code).to eq(404)
+    end
   end
 end

@@ -9,36 +9,52 @@ describe Lightstreamer::Session do
 
   let(:subscription) { build :subscription, items: ['item'], fields: ['field'] }
 
-  def expect_stream_data(*lines)
-    lines.each do |line|
-      expect(stream_connection).to receive(:read_line).and_return(line)
+  context 'that can connect' do
+    before do
+      expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
+      expect(stream_connection).to receive(:connect)
+      expect(stream_connection).to receive(:control_address).and_return('test2.com')
+      expect(stream_connection).to receive(:session_id).and_return('session')
     end
-  end
 
-  it 'connects to a stream and processes its data' do
-    expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
-    expect(stream_connection).to receive(:connect)
-    expect(stream_connection).to receive(:disconnect)
-    expect(stream_connection).to receive(:control_address).and_return('test2.com')
-    expect(stream_connection).to receive(:session_id).and_return('session')
+    def join_processing_thread(session)
+      thread = session.instance_variable_get(:@processing_thread)
+      thread.join if thread
+    end
 
-    expect(Lightstreamer::ControlConnection).to receive(:new)
-      .with('session', 'http://test2.com')
-      .and_return(control_connection)
+    it 'connects to a stream and processes its data' do
+      expect(Lightstreamer::ControlConnection).to receive(:new)
+        .with('session', 'http://test2.com')
+        .and_return(control_connection)
 
-    expect_stream_data "#{subscription.id},1|test", 'invalid data'
+      expect(stream_connection).to receive(:read_line).and_return("#{subscription.id},1|test")
+      expect(stream_connection).to receive(:read_line).and_return('invalid data')
+      expect(stream_connection).to receive(:read_line) { Thread.exit }
+      expect(stream_connection).to receive(:disconnect)
 
-    expect(stream_connection).to receive(:read_line) { Thread.exit }
+      session.instance_variable_set :@subscriptions, [subscription]
+      expect(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
+      expect(subscription).to receive(:process_stream_data).with('invalid data').and_return(false)
 
-    session.instance_variable_set :@subscriptions, [subscription]
-    expect(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
-    expect(subscription).to receive(:process_stream_data).with('invalid data').and_return(false)
+      expect do
+        session.connect
+        join_processing_thread session
+        session.disconnect
+      end.to output("Lightstreamer: unprocessed stream data 'invalid data'\n").to_stderr
+    end
 
-    expect do
-      session.connect
-      session.instance_variable_get(:@processing_thread).join
-      session.disconnect
-    end.to output("Lightstreamer: unprocessed stream data 'invalid data'\n").to_stderr
+    it 'handles when the stream connection dies' do
+      expect(stream_connection).to receive(:read_line).and_return(nil)
+      expect(stream_connection).to receive(:error).and_return('test')
+
+      expect do
+        session.connect
+        expect(session.connected?).to be true
+        join_processing_thread session
+        expect(session.connected?).to be false
+        session.disconnect
+      end.to output("Lightstreamer: processing thread exiting, error: test\n").to_stderr
+    end
   end
 
   it 'handles when the stream connection fails to connect' do

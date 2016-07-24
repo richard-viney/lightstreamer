@@ -15,8 +15,8 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.0'
 
-  s.add_runtime_dependency 'rest-client', '~> 2.0'
   s.add_runtime_dependency 'thor', '~> 0.19'
+  s.add_runtime_dependency 'typhoeus', '~> 1.1'
 
   # Use Active Support 4 on Ruby versions prior to 2.2.2
   if RUBY_VERSION =~ /^2\.((0|1)\.|2\.(0|1)$)/

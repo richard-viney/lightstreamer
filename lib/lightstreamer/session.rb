@@ -44,6 +44,13 @@ module Lightstreamer
       raise
     end
 
+    # Returns whether this session is currently connected and has an active stream connection.
+    #
+    # @return [Boolean]
+    def connected?
+      !@stream_connection.nil?
+    end
+
     # Disconnects this session and shuts down its stream connection and processing threads.
     def disconnect
       @stream_connection.disconnect if @stream_connection
@@ -119,8 +126,14 @@ module Lightstreamer
         loop do
           line = @stream_connection.read_line
 
+          break if line.nil?
+
           process_stream_data line unless line.empty?
         end
+
+        # The stream connection has died, so exit the processing thread
+        warn "Lightstreamer: processing thread exiting, error: #{@stream_connection.error}"
+        @processing_thread = @stream_connection = @control_connection = nil
       end
     end
 

@@ -4,6 +4,9 @@
 
 - Seamlessly rebind the stream connection when a `LOOP` message is received
 - Correctly handle UTF-16 escape sequences in stream data, including UTF-16 surrogate pairs
+- Switched to the `typhoeus` library for HTTP support
+- Improved error handling on the stream thread
+- Added `Lightstreamer::Session#connected?`
 
 ### 0.2 — July 23, 2016
 

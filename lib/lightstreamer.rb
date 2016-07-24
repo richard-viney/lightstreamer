@@ -1,5 +1,5 @@
-require 'rest-client'
 require 'thor'
+require 'typhoeus'
 
 require 'lightstreamer/control_connection'
 require 'lightstreamer/line_buffer'

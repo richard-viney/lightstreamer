@@ -31,16 +31,14 @@ module Lightstreamer
 
     private
 
-    # Executes a POST request to the control address with the specified payload. Raises an error if the HTTP request
-    # fails. Returns the response from the server split into individual lines.
+    # Executes a POST request to the control address with the specified payload. Raises {RequestError} if the HTTP
+    # request fails. Returns the response body split into individual lines.
     def execute_post_request(payload)
-      response = RestClient::Request.execute method: :post, url: @control_url, payload: payload
+      response = Typhoeus.post @control_url, body: payload
+
+      raise RequestError.new(response.return_message, response.response_code) unless response.success?
 
       response.body.split("\n").map(&:strip)
-    rescue RestClient::Exception => exception
-      raise RequestError, exception.message
-    rescue SocketError => socket_error
-      raise RequestError, socket_error
     end
 
     # Constructs the payload for a Lightstreamer control request based on the given options hash. See {#execute} for
@@ -54,7 +52,7 @@ module Lightstreamer
 
       build_optional_payload_fields options, params
 
-      URI.encode_www_form params
+      params
     end
 
     def build_optional_payload_fields(options, params)
