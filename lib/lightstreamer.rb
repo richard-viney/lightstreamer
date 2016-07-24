@@ -1,5 +1,6 @@
 require 'thor'
 require 'typhoeus'
+require 'uri'
 
 require 'lightstreamer/control_connection'
 require 'lightstreamer/line_buffer'

@@ -43,9 +43,9 @@ session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com'
 # Connect the session
 session.connect
 
-# Create a new subscription that subscribes to five items and to four fields on each item
-subscription = Lightstreamer::Subscription.new items: %w(item1 item2 item3 item4 item5),
-                                               fields: [:time, :stock_name, :bid, :ask],
+# Create a new subscription that subscribes to thirty items and to four fields on each item
+subscription = Lightstreamer::Subscription.new items: (1..30).map { |i| "item#{i}" },
+                                               fields: [:ask, :bid, :stock_name, :time],
                                                mode: :merge, adapter: 'QUOTE_ADAPTER'
 
 # Create a thread-safe queue
@@ -76,10 +76,10 @@ To print streaming data from the demo server run the following command:
 
 ```
 lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO --adapter QUOTE_ADAPTER \
-              --items item1 item2 item3 item4 item5 --fields time stock_name bid ask bid
+              --items item1 item2 item3 item4 item5 --fields ask bid stock_name time
 ```
 
-To see a full list of available options run the following command:
+To see a full list of available options for the command-line client run the following command:
 
 ```
 lightstreamer help stream
