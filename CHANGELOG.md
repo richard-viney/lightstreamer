@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.3 — Unreleased
+### 0.3 — July 24, 2016
 
 - Seamlessly rebind the stream connection when a `LOOP` message is received
 - Correctly handle UTF-16 escape sequences in stream data, including UTF-16 surrogate pairs
