@@ -36,20 +36,15 @@ module Lightstreamer
     def connect
       return if @stream_connection
 
-      @stream_connection = StreamConnection.new self
-
-      first_line = @stream_connection.read_line
-
-      if first_line == 'OK'
-        @session_id = read_session_id
-        create_control_connection
-        create_processing_thread
-      elsif first_line == 'ERROR'
-        handle_connection_error
-      end
+      create_stream_connection
+      create_control_connection
+      create_processing_thread
+    rescue
+      @stream_connection = nil
+      raise
     end
 
-    # Disconnects this session and shuts down its stream and processing threads.
+    # Disconnects this session and shuts down its stream connection and processing threads.
     def disconnect
       @stream_connection.disconnect if @stream_connection
 
@@ -102,25 +97,20 @@ module Lightstreamer
 
     private
 
-    # Parses the next line of data from the stream connection as the session ID and returns it.
-    def read_session_id
-      @stream_connection.read_line.match(/^SessionId:(.*)$/).captures.first
+    def create_stream_connection
+      @stream_connection = StreamConnection.new self
+      @stream_connection.connect
     end
 
-    # Attempts to parses the next line of data from the stream connection as a custom control address and then uses this
-    # address to create the control connection. Note that the control address is optional and if it is absent then
-    # {#server_url} will be used instead of a custom control address.
     def create_control_connection
-      match = @stream_connection.read_line.match(/^ControlAddress:(.*)$/)
-      control_address = (match && match.captures.first) || server_url
+      control_address = @stream_connection.control_address || server_url
 
-      # The rest of the contents in the header is ignored, so read up until the blank line that marks its ending
-      loop { break if @stream_connection.read_line == '' }
+      # If the control address doesn't have a schema then use the same schema as the server URL
+      unless control_address.start_with? 'http'
+        control_address = "#{URI(server_url).scheme}://#{control_address}"
+      end
 
-      # If the control URL doesn't have a schema then use the same schema as the server URL
-      control_address = "#{URI(server_url).scheme}://#{control_address}" unless control_address.start_with? 'http'
-
-      @control_connection = ControlConnection.new @session_id, control_address
+      @control_connection = ControlConnection.new @stream_connection.session_id, control_address
     end
 
     # Starts the processing thread that reads and processes incoming data from the stream connection.
@@ -144,18 +134,6 @@ module Lightstreamer
       end
 
       warn "Lightstreamer: unprocessed stream data '#{line}'" unless was_processed
-    end
-
-    # Handles a failure to establish a stream connection by reading off the error code and error message then raising
-    # a {ProtocolError}.
-    def handle_connection_error
-      error_code = @stream_connection.read_line
-      error_message = @stream_connection.read_line
-
-      @stream_connection = nil
-      @control_connection = nil
-
-      raise ProtocolError.new(error_message, error_code)
     end
   end
 end

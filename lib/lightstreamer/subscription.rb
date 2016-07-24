@@ -134,12 +134,8 @@ module Lightstreamer
 
     private
 
-    # Attempts to parse an line of stream data.
-    #
-    # @param [String] line The line of stream data to parse.
-    #
-    # @return [Array] The first value is the item index, and the second is a hash of the values contained in the stream
-    #                 data. Will be nil if the stream data was not able to be parsed.
+    # Attempts to parse a line of stream data. If parsing is successful then the first return value is the item index,
+    # and the second is a hash of the values contained in the stream data.
     def parse_stream_data(line)
       match = line.match stream_data_regex
       return unless match
@@ -152,18 +148,12 @@ module Lightstreamer
 
     # Returns the regular expression that will match a single line of data in the incoming stream that is relevant to
     # this subscription. The ID at the beginning must match, as well as the number of fields.
-    #
-    # @return [Regexp]
     def stream_data_regex
       Regexp.new "^#{id},(\\d+)#{'\|(.*)' * fields.size}"
     end
 
     # Parses an array of values from an incoming line of stream data into a hash where the keys are the field names
     # defined for this subscription.
-    #
-    # @param [String] values The raw values from the incoming stream data.
-    #
-    # @return [Hash] The parsed values as a hash where the keys are the field names of this subscription.
     def parse_values(values)
       hash = {}
 

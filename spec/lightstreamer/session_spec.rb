@@ -4,7 +4,7 @@ describe Lightstreamer::Session do
                                adapter_set: 'adapter-set'
   end
 
-  let(:stream_connection) { instance_double 'Lightstreamer::StreamConnection', disconnect: nil }
+  let(:stream_connection) { instance_double 'Lightstreamer::StreamConnection' }
   let(:control_connection) { instance_double 'Lightstreamer::ControlConnection' }
 
   let(:subscription) { build :subscription, items: ['item'], fields: ['field'] }
@@ -17,13 +17,16 @@ describe Lightstreamer::Session do
 
   it 'connects to a stream and processes its data' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
+    expect(stream_connection).to receive(:connect)
+    expect(stream_connection).to receive(:disconnect)
+    expect(stream_connection).to receive(:control_address).and_return('test2.com')
+    expect(stream_connection).to receive(:session_id).and_return('session')
 
     expect(Lightstreamer::ControlConnection).to receive(:new)
-      .with('session_id', 'http://test2.com')
+      .with('session', 'http://test2.com')
       .and_return(control_connection)
 
-    expect_stream_data 'OK', 'SessionId:session_id', 'ControlAddress:test2.com', 'KeepaliveMillis:5000',
-                       'MaxBandwidth:0', '', "#{subscription.id},1|test", 'invalid data'
+    expect_stream_data "#{subscription.id},1|test", 'invalid data'
 
     expect(stream_connection).to receive(:read_line) { Thread.exit }
 
@@ -40,8 +43,7 @@ describe Lightstreamer::Session do
 
   it 'handles when the stream connection fails to connect' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
-
-    expect_stream_data 'ERROR', '10', 'Error message'
+    expect(stream_connection).to receive(:connect).and_raise(Lightstreamer::ProtocolError.new('Error message', 10))
 
     expect { session.connect }.to raise_error do |error|
       expect(error).to be_a(Lightstreamer::ProtocolError)

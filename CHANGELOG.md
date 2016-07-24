@@ -2,6 +2,7 @@
 
 ### 0.3 — Unreleased
 
+- Seamlessly rebind the stream connection when a `LOOP` message is received
 - Correctly handle UTF-16 escape sequences in stream data, including UTF-16 surrogate pairs
 
 ### 0.2 — July 23, 2016
