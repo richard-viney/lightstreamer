@@ -11,7 +11,7 @@ module Lightstreamer
     # @return [String] The control address returned from the server when this stream connection was initiated.
     attr_reader :control_address
 
-    # @return [ProtcolError, RequestError, String] If an error occurs on the stream thread that causes this stream
+    # @return [ProtocolError, RequestError, String] If an error occurs on the stream thread that causes this stream
     #         to disconnect then the exception or error details will be stored in this attribute.
     attr_reader :error
 
