@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.5 — Unreleased
+
+- 
+
 ### 0.4 — July 25, 2016
 
 - Added support for specifying a subscription's selector and maximum update frequency
