@@ -21,6 +21,9 @@ module Lightstreamer
     #                  If `nil` then the default data adapter will be used.
     attr_reader :adapter
 
+    # @return [String] The selector for table items. Optional.
+    attr_reader :selector
+
     # @return [Float] The maximum number of updates this subscription should receive per second. If this is set to zero,
     #         which is the default, then there is no limit on the update frequency.
     attr_reader :maximum_update_frequency
@@ -34,15 +37,17 @@ module Lightstreamer
     # @option options [:distinct, :merge] :mode The operation mode of this subscription.
     # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
     #                 should be used. If `nil` then the default data adapter will be used.
+    # @option options [String] :selector The selector for table items. Optional.
     # @option options [Float] :maximum_update_frequency The maximum number of updates this subscription should receive
     #                 per second. Defaults to zero which means there is no limit on the update frequency.
     def initialize(options)
       @id = self.class.next_id
 
-      @items = Array(options.fetch(:items))
-      @fields = Array(options.fetch(:fields))
+      @items = options.fetch(:items)
+      @fields = options.fetch(:fields)
       @mode = options.fetch(:mode).to_sym
       @adapter = options[:adapter]
+      @selector = options[:selector]
       @maximum_update_frequency = options[:maximum_update_frequency] || 0.0
 
       @data_mutex = Mutex.new

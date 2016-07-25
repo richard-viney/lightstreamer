@@ -7,7 +7,7 @@ describe Lightstreamer::Session do
   let(:stream_connection) { instance_double 'Lightstreamer::StreamConnection' }
   let(:control_connection) { instance_double 'Lightstreamer::ControlConnection' }
 
-  let(:subscription) { build :subscription, items: ['item'], fields: ['field'] }
+  let(:subscription) { build :subscription, items: ['item'], fields: ['field'], selector: 'selector' }
 
   context 'that can connect' do
     before do
@@ -75,7 +75,8 @@ describe Lightstreamer::Session do
     expect(subscription).to receive(:clear_data)
     expect(control_connection).to receive(:subscription_execute)
       .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
-                                   adapter: subscription.adapter, maximum_update_frequency: 0.0)
+                                   adapter: subscription.adapter, maximum_update_frequency: 0.0,
+                                   selector: 'selector')
 
     session.subscribe subscription
 
@@ -88,7 +89,8 @@ describe Lightstreamer::Session do
     expect(subscription).to receive(:clear_data)
     expect(control_connection).to receive(:subscription_execute)
       .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
-                                   adapter: subscription.adapter, maximum_update_frequency: 0.0)
+                                   adapter: subscription.adapter, maximum_update_frequency: 0.0,
+                                   selector: 'selector')
       .and_raise('test')
 
     expect { session.subscribe subscription }.to raise_error('test')

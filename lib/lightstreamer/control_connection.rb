@@ -26,7 +26,7 @@ module Lightstreamer
     # occurs then an {Error} subclass will be raised.
     #
     # @param [:add, :add_silent, :start, :delete] operation The operation to execute.
-    # @param [Fixnum] table The ID of the table this request pertains to
+    # @param [Fixnum] table The ID of the table this request pertains to.
     # @param [Hash] options The subscription control request options.
     # @option options [String] :adapter The name of the data adapter to use. Optional.
     # @option options [Array<String>] :items The names of the items that this request pertains to. Required if
@@ -35,6 +35,7 @@ module Lightstreamer
     #                 `operation` is `:add` or `:add_silent`.
     # @option options [:distinct, :merge] :mode The subscription mode. Required if `operation` is `:add` or
     #                 `:add_silent`.
+    # @option options [String] :selector The selector for table items. Optional.
     def subscription_execute(operation, table, options = {})
       options[:table] = table
 
@@ -88,6 +89,7 @@ module Lightstreamer
       adapter: :LS_data_adapter,
       items: :LS_id,
       fields: :LS_schema,
+      selector: :LS_selector,
       maximum_update_frequency: :LS_requested_max_frequency
     }.freeze
 

@@ -21,7 +21,8 @@ describe Lightstreamer::CLI::Main do
     expect(session).to receive(:connect)
 
     expect(Lightstreamer::Subscription).to receive(:new)
-      .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil)
+      .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil,
+            selector: nil)
       .and_return(subscription)
 
     expect(subscription).to receive(:add_data_callback)

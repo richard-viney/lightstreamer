@@ -82,15 +82,14 @@ module Lightstreamer
 
       @subscriptions_mutex.synchronize { @subscriptions << subscription }
 
-      begin
-        options = { mode: subscription.mode, items: subscription.items, fields: subscription.fields,
-                    adapter: subscription.adapter, maximum_update_frequency: subscription.maximum_update_frequency }
+      options = { mode: subscription.mode, items: subscription.items, fields: subscription.fields,
+                  adapter: subscription.adapter, maximum_update_frequency: subscription.maximum_update_frequency,
+                  selector: subscription.selector }
 
-        @control_connection.subscription_execute :add, subscription.id, options
-      rescue
-        @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
-        raise
-      end
+      @control_connection.subscription_execute :add, subscription.id, options
+    rescue
+      @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
+      raise
     end
 
     # Returns whether the specified subscription is currently active on this session.

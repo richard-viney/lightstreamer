@@ -5,9 +5,11 @@ FactoryGirl.define do
     mode :merge
     adapter nil
     maximum_update_frequency nil
+    selector nil
 
     initialize_with do
-      new items: items, fields: fields, mode: mode, adapter: adapter, maximum_update_frequency: maximum_update_frequency
+      new items: items, fields: fields, mode: mode, adapter: adapter, selector: selector,
+          maximum_update_frequency: maximum_update_frequency
     end
   end
 end
