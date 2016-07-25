@@ -74,7 +74,7 @@ describe Lightstreamer::Session do
     expect(subscription).to receive(:clear_data)
     expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :add, mode: :merge,
                                                          items: subscription.items, fields: subscription.fields,
-                                                         adapter: subscription.adapter)
+                                                         adapter: subscription.adapter, maximum_update_frequency: 0.0)
 
     session.subscribe subscription
 
@@ -87,7 +87,8 @@ describe Lightstreamer::Session do
     expect(subscription).to receive(:clear_data)
     expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :add, mode: :merge,
                                                          items: subscription.items, fields: subscription.fields,
-                                                         adapter: subscription.adapter).and_raise('test')
+                                                         adapter: subscription.adapter,
+                                                         maximum_update_frequency: 0.0).and_raise('test')
 
     expect { session.subscribe subscription }.to raise_error('test')
 

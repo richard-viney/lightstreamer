@@ -80,10 +80,14 @@ module Lightstreamer
     end
 
     def build_optional_payload_fields(options, params)
-      params[:LS_data_adapter] = options[:adapter] if options[:adapter]
-      params[:LS_id] = options[:items].join(' ') if options[:items]
-      params[:LS_schema] = options[:fields].map(&:to_s).join(' ') if options[:fields]
       params[:LS_mode] = options[:mode].to_s.upcase if options[:mode]
+
+      { adapter: :LS_data_adapter, items: :LS_id, fields: :LS_schema,
+        maximum_update_frequency: :LS_requested_max_frequency }.each do |option, param_name|
+        next unless options[option]
+
+        params[param_name] = options[option].is_a?(Array) ? options[option].map(&:to_s).join(' ') : options[option]
+      end
     end
   end
 end

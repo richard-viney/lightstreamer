@@ -1,8 +1,8 @@
 module Lightstreamer
-  # Describes a subscription that can be bound to a Lightstreamer session in order to consume its data. A subscription
-  # is described by the options passed to {#initialize}. Incoming data can be consumed by registering an asynchronous
-  # data callback using {#add_data_callback}, or by polling {#retrieve_item_data}. Subscriptions start receiving data
-  # only once they are attached to a Lightstreamer session using {Session#subscribe}.
+  # Describes a subscription that can be bound to a {Session} in order to consume its streaming data. A subscription is
+  # described by the options passed to {#initialize}. Incoming data can be consumed by registering an asynchronous data
+  # callback using {#add_data_callback}, or by polling {#retrieve_item_data}. Subscriptions start receiving data only
+  # once they are attached to a session using {Session#subscribe}.
   class Subscription
     # @return [Fixnum] The unique identification number of this subscription. This is used to identify the subscription
     #                  in incoming Lightstreamer data.
@@ -21,6 +21,10 @@ module Lightstreamer
     #                  If `nil` then the default data adapter will be used.
     attr_reader :adapter
 
+    # @return [Float] The maximum number of updates this subscription should receive per second. If this is set to zero,
+    #         which is the default, then there is no limit on the update frequency.
+    attr_reader :maximum_update_frequency
+
     # Initializes a new Lightstreamer subscription with the specified options. This can then be passed to
     # {Session#subscribe} to activate the subscription on a Lightstreamer session.
     #
@@ -30,6 +34,8 @@ module Lightstreamer
     # @option options [:distinct, :merge] :mode The operation mode of this subscription.
     # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
     #                 should be used. If `nil` then the default data adapter will be used.
+    # @option options [Float] :maximum_update_frequency The maximum number of updates this subscription should receive
+    #                 per second. Defaults to zero which means there is no limit on the update frequency.
     def initialize(options)
       @id = self.class.next_id
 
@@ -37,6 +43,7 @@ module Lightstreamer
       @fields = Array(options.fetch(:fields))
       @mode = options.fetch(:mode).to_sym
       @adapter = options[:adapter]
+      @maximum_update_frequency = options[:maximum_update_frequency] || 0.0
 
       @data_mutex = Mutex.new
       clear_data

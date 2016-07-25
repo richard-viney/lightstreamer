@@ -12,6 +12,7 @@ module Lightstreamer
       option :items, type: :array, required: true, desc: 'The names of the item(s) to stream'
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
       option :mode, enum: %w(distinct merge), default: :merge, desc: 'The operation mode'
+      option :maximum_update_frequency, type: :numeric, desc: 'The maximum number of updates per second for each item'
 
       def stream
         session = create_session
@@ -37,7 +38,8 @@ module Lightstreamer
       # Creates a new subscription from the specified options.
       def create_subscription
         subscription = Lightstreamer::Subscription.new items: options[:items], fields: options[:fields],
-                                                       mode: options[:mode], adapter: options[:adapter]
+                                                       mode: options[:mode], adapter: options[:adapter],
+                                                       maximum_update_frequency: options[:maximum_update_frequency]
 
         subscription.add_data_callback(&method(:subscription_data_callback))
 

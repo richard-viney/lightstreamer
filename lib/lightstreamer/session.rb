@@ -73,9 +73,9 @@ module Lightstreamer
       @subscriptions_mutex.synchronize { @subscriptions << subscription }
 
       begin
-        @control_connection.execute table: subscription.id, operation: :add, mode: subscription.mode,
-                                    items: subscription.items, fields: subscription.fields,
-                                    adapter: subscription.adapter
+        @control_connection.execute operation: :add, maximum_update_frequency: subscription.maximum_update_frequency,
+                                    table: subscription.id, mode: subscription.mode, items: subscription.items,
+                                    fields: subscription.fields, adapter: subscription.adapter
       rescue
         @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
         raise
