@@ -55,17 +55,6 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.connected?).to be false
   end
 
-  it 'handles an exception on the stream thread' do
-    expect(create_request).to receive(:on_body).and_raise('test')
-
-    stream_connection = Lightstreamer::StreamConnection.new session
-
-    expect { stream_connection.connect }.to raise_error('test')
-
-    expect(stream_connection.error.message).to eq('test')
-    expect(stream_connection.connected?).to be false
-  end
-
   it 'handles an HTTP error on the stream thread' do
     on_complete_block = nil
 

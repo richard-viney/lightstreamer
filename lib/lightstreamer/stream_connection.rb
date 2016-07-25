@@ -73,23 +73,17 @@ module Lightstreamer
 
     def create_stream_thread
       @thread = Thread.new do
-        begin
-          stream_thread_main
-        rescue StandardError => error
-          @error = error
+        connect_stream_and_process_data stream_create_post_request
+
+        while @loop
+          @loop = false
+          connect_stream_and_process_data stream_bind_post_request
         end
 
         @thread = nil
       end
-    end
 
-    def stream_thread_main
-      connect_stream_and_process_data stream_create_post_request
-
-      while @loop
-        @loop = false
-        connect_stream_and_process_data stream_bind_post_request
-      end
+      @thread.abort_on_exception = true
     end
 
     def stream_create_post_request

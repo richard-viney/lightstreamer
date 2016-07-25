@@ -4,6 +4,7 @@
 
 - Added validation of the arguments for control connection requests
 - Fixed handling of `nil` subscription adapters
+- Unhandled exceptions on the internal worker threads now cause the application to terminate
 
 ### 0.3 — July 24, 2016
 

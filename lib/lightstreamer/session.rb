@@ -135,6 +135,8 @@ module Lightstreamer
         warn "Lightstreamer: processing thread exiting, error: #{@stream_connection.error}"
         @processing_thread = @stream_connection = @control_connection = nil
       end
+
+      @processing_thread.abort_on_exception = true
     end
 
     # Processes a single line of incoming stream data by passing it to all the active subscriptions until one
