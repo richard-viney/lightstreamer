@@ -14,6 +14,11 @@ module Lightstreamer
     # @return [String] The name of the adapter set to request from the Lightstreamer server. Set by {#initialize}.
     attr_reader :adapter_set
 
+    # @return [Error] If an error occurs on the stream connection that causes the session to terminate then details of
+    #         the error will be stored in this attribute. If the session is terminated as a result of calling
+    #         {#disconnect} then the error will be {SessionEndError}.
+    attr_reader :error
+
     # Initializes this new Lightstreamer session with the passed options.
     #
     # @param [Hash] options The options to create the session with.
@@ -36,6 +41,8 @@ module Lightstreamer
     def connect
       return if @stream_connection
 
+      @error = nil
+
       create_stream_connection
       create_control_connection
       create_processing_thread
@@ -51,16 +58,16 @@ module Lightstreamer
       !@stream_connection.nil?
     end
 
-    # Disconnects this session and shuts down its stream connection and processing threads.
+    # Disconnects this session and terminates the session on the server. All worker threads are exited.
     def disconnect
+      @control_connection.execute :destroy if @control_connection
+
+      @processing_thread.join 5 if @processing_thread
+    ensure
       @stream_connection.disconnect if @stream_connection
+      @processing_thread.exit if @processing_thread
 
-      if @processing_thread
-        @processing_thread.exit
-        @processing_thread.join
-      end
-
-      @processing_thread = @stream_connection = @control_connection = nil
+      @processing_thread = @control_connection = @stream_connection = nil
       @subscriptions = []
     end
 
@@ -74,7 +81,8 @@ module Lightstreamer
       @control_connection.execute :force_rebind
     end
 
-    # Subscribes this Lightstreamer session to the specified subscription.
+    # Subscribes this Lightstreamer session to the specified subscription. If an error occurs then an {Error} subclass
+    # will be raised.
     #
     # @param [Subscription] subscription The new subscription to subscribe to.
     def subscribe(subscription)
@@ -143,9 +151,9 @@ module Lightstreamer
           process_stream_data line unless line.empty?
         end
 
-        # The stream connection has died, so exit the processing thread
-        warn "Lightstreamer: processing thread exiting, error: #{@stream_connection.error}"
-        @processing_thread = @stream_connection = @control_connection = nil
+        # The stream connection has terminated so the session is assumed to be over
+        @error = @stream_connection.error
+        @processing_thread = @control_connection = @stream_connection = nil
       end
     end
 

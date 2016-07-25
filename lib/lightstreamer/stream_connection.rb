@@ -31,6 +31,7 @@ module Lightstreamer
     def connect
       return if @thread
       @session_id = @error = nil
+      @queue.clear
 
       create_stream_thread
 
@@ -83,6 +84,7 @@ module Lightstreamer
         end
 
         @thread = nil
+        @queue.push nil
       end
     end
 

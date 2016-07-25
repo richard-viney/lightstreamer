@@ -9,6 +9,9 @@
 - All error classes now inherit from `Lightstreamer::Error` and the different Lightstreamer errors that can occur are
   separated into a variety of new subclasses
 - Removed `Lightstreamer::ProtocolError`
+- `Lightstreamer::Session#disconnect` now properly terminates the session with the server by sending the relevant
+  control request
+- The reason why a session terminated can now be queried using `Lightstreamer::Session#error`
 - Fixed handling of `nil` subscription adapters
 - Correctly handle when an `END` message is received on the stream connection
 - All valid error responses from session create and bind requests are now handled correctly
