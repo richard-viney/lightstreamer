@@ -49,10 +49,8 @@ describe Lightstreamer::Session do
 
       expect do
         session.connect
-        expect(session.connected?).to be true
         join_processing_thread session
         expect(session.connected?).to be false
-        session.disconnect
       end.to output("Lightstreamer: processing thread exiting, error: test\n").to_stderr
     end
   end

@@ -45,13 +45,15 @@ describe Lightstreamer::StreamConnection do
     bind_params = { LS_session: 'A' }
 
     on_body_block = nil
+    stream_thread = nil
 
     expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
     expect(create_request).to receive(:on_complete)
     expect(create_request).to receive(:run) do
       on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
 
-      sleep 0.1 # Gives the main thread a chance to get out of the spinlock in #connect. TODO: use condition var
+      stream_thread = Thread.current
+      sleep
     end
 
     expect(Typhoeus::Request).to receive(:new)
@@ -71,6 +73,9 @@ describe Lightstreamer::StreamConnection do
 
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')
+
+    stream_thread.run
+
     expect(stream_connection.read_line).to eq('three')
     expect(stream_connection.read_line).to eq('four')
 
