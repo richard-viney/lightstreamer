@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.4 — Unreleased
+
+- 
+
 ### 0.3 — July 24, 2016
 
 - Seamlessly rebind the stream connection when a `LOOP` message is received
