@@ -2,7 +2,8 @@
 
 ### 0.4 — Unreleased
 
-- 
+- Added validation of the arguments for control connection requests
+- Fixed handling of `nil` subscription adapters
 
 ### 0.3 — July 24, 2016
 

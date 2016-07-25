@@ -25,6 +25,32 @@ describe Lightstreamer::ControlConnection do
     expect { control_connection.execute table: 1, operation: :delete }.to raise_error(Lightstreamer::ProtocolError)
   end
 
+  it 'handles a nil adapter' do
+    body = { LS_session: 'session', LS_table: 1, LS_op: :delete }
+
+    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(response).to receive(:success?).and_return(true)
+    expect(response).to receive(:body).and_return('OK')
+
+    control_connection.execute table: 1, operation: :delete, adapter: nil
+  end
+
+  it 'raises an error on invalid options' do
+    [
+      {},
+      { table: 1, operation: :invalid },
+      { table: '1', operation: :add },
+      { table: 1, operation: :add, items: nil, fields: nil },
+      { table: 1, operation: :add, items: [], fields: [] },
+      { table: 1, operation: :add, items: ['a'], fields: [] },
+      { table: 1, operation: :add, items: [], fields: ['a'] },
+      { table: 1, operation: :add, items: ['1'], fields: ['a'] },
+      { table: 1, operation: :add, items: ['1'], fields: ['a'], mode: :invalid }
+    ].each do |options|
+      expect { control_connection.execute options }.to raise_error(ArgumentError)
+    end
+  end
+
   it 'handles a request error' do
     expect(Typhoeus).to receive(:post).and_return(response)
     expect(response).to receive(:success?).and_return(false)

@@ -22,14 +22,38 @@ module Lightstreamer
     #                 `:operation` is `:add` or `:add_silent`.
     # @option options [Array<String>] :fields The names of the fields that this request pertains to. Required if
     #                 `:operation` is `:add` or `:add_silent`.
-    # @option options [:raw, :merge, :distinct, :command] :mode The subscription mode.
+    # @option options [:distinct, :merge] :mode The subscription mode.
     def execute(options)
+      validate_options options
+
       result = execute_post_request build_payload(options)
 
       raise ProtocolError.new(result[2], result[1]) if result.first == 'ERROR'
     end
 
     private
+
+    # Validates the passed control request options.
+    def validate_options(options)
+      validate_required_options options
+      validate_add_options options if [:add, :add_silent].include? options[:operation]
+    end
+
+    # Validates options required for all control requests.
+    def validate_required_options(options)
+      raise ArgumentError, 'Invalid table' unless options[:table].is_a? Fixnum
+
+      unless [:add, :add_silent, :start, :delete].include? options[:operation]
+        raise ArgumentError, 'Unsupported operation'
+      end
+    end
+
+    # Validates options required for control requests that perform `add` operations.
+    def validate_add_options(options)
+      raise ArgumentError, 'Items not specified' if Array(options[:items]).empty?
+      raise ArgumentError, 'Fields not specified' if Array(options[:fields]).empty?
+      raise ArgumentError, 'Unsupported mode' unless [:distinct, :merge].include? options[:mode]
+    end
 
     # Executes a POST request to the control address with the specified payload. Raises {RequestError} if the HTTP
     # request fails. Returns the response body split into individual lines.
@@ -56,10 +80,10 @@ module Lightstreamer
     end
 
     def build_optional_payload_fields(options, params)
-      params[:LS_data_adapter] = options[:adapter] if options.key? :adapter
-      params[:LS_id] = options[:items].join(' ') if options.key? :items
-      params[:LS_schema] = options[:fields].map(&:to_s).join(' ') if options.key? :fields
-      params[:LS_mode] = options[:mode].to_s.upcase if options.key? :mode
+      params[:LS_data_adapter] = options[:adapter] if options[:adapter]
+      params[:LS_id] = options[:items].join(' ') if options[:items]
+      params[:LS_schema] = options[:fields].map(&:to_s).join(' ') if options[:fields]
+      params[:LS_mode] = options[:mode].to_s.upcase if options[:mode]
     end
   end
 end
