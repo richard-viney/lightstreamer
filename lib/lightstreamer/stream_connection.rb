@@ -94,11 +94,15 @@ module Lightstreamer
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
-      Typhoeus::Request.new @stream_create_url, method: :post, params: params
+      Typhoeus::Request.new @stream_create_url, request_options(params)
     end
 
     def stream_bind_post_request
-      Typhoeus::Request.new @stream_bind_url, method: :post, params: { LS_session: @session_id }
+      Typhoeus::Request.new @stream_bind_url, request_options(LS_session: @session_id)
+    end
+
+    def request_options(params)
+      { method: :post, params: params, timeout: 60, connecttimeout: 15 }
     end
 
     def connect_stream_and_process_data(request)

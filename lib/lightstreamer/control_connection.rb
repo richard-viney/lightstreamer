@@ -28,14 +28,6 @@ module Lightstreamer
     # @param [:add, :add_silent, :start, :delete] operation The operation to execute.
     # @param [Fixnum] table The ID of the table this request pertains to.
     # @param [Hash] options The subscription control request options.
-    # @option options [String] :adapter The name of the data adapter to use. Optional.
-    # @option options [Array<String>] :items The names of the items that this request pertains to. Required if
-    #                 `operation` is `:add` or `:add_silent`.
-    # @option options [Array<String>] :fields The names of the fields that this request pertains to. Required if
-    #                 `operation` is `:add` or `:add_silent`.
-    # @option options [:distinct, :merge] :mode The subscription mode. Required if `operation` is `:add` or
-    #                 `:add_silent`.
-    # @option options [String] :selector The selector for table items. Optional.
     def subscription_execute(operation, table, options = {})
       options[:table] = table
 
@@ -64,7 +56,7 @@ module Lightstreamer
     # Executes a POST request to the control address with the specified payload. Raises {RequestError} if the HTTP
     # request fails. Returns the response body split into individual lines.
     def execute_post_request(payload)
-      response = Typhoeus.post @control_url, body: payload
+      response = Typhoeus.post @control_url, body: payload, timeout: 15
 
       raise RequestError.new(response.return_message, response.response_code) unless response.success?
 

@@ -13,7 +13,8 @@ describe Lightstreamer::StreamConnection do
 
   before do
     expect(Typhoeus::Request).to receive(:new)
-      .with('http://test.com/lightstreamer/create_session.txt', method: :post, params: create_params)
+      .with('http://test.com/lightstreamer/create_session.txt', method: :post, params: create_params, timeout: 60,
+                                                                connecttimeout: 15)
       .and_return(create_request)
   end
 
@@ -57,7 +58,8 @@ describe Lightstreamer::StreamConnection do
     end
 
     expect(Typhoeus::Request).to receive(:new)
-      .with('http://test.com/lightstreamer/bind_session.txt', method: :post, params: bind_params)
+      .with('http://test.com/lightstreamer/bind_session.txt', method: :post, params: bind_params, timeout: 60,
+                                                              connecttimeout: 15)
       .and_return(bind_request)
 
     expect(bind_request).to receive(:on_body) { |&block| on_body_block = block }

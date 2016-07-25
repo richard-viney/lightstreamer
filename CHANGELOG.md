@@ -2,7 +2,9 @@
 
 ### 0.5 — Unreleased
 
-- 
+- Added explicit timeouts to all HTTP requests
+- Unhandled exceptions in subscription data callbacks are no longer automatically rescued
+- Overflow messages are now silently ignored if they occur
 
 ### 0.4 — July 25, 2016
 

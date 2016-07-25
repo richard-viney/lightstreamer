@@ -121,6 +121,8 @@ module Lightstreamer
     # @return [Boolean] Whether the passed line of stream data was relevant to this subscription and was successfully
     #         processed by it.
     def process_stream_data(line)
+      return true if overflow_message? line
+
       item_index, new_values = parse_stream_data line
       return false unless item_index
 
@@ -149,7 +151,7 @@ module Lightstreamer
     # Attempts to parse a line of stream data. If parsing is successful then the first return value is the item index,
     # and the second is a hash of the values contained in the stream data.
     def parse_stream_data(line)
-      match = line.match stream_data_regex
+      match = line.match stream_data_regexp
       return unless match
 
       item_index = match.captures[0].to_i - 1
@@ -158,9 +160,15 @@ module Lightstreamer
       [item_index, parse_values(match.captures[1..-1])]
     end
 
+    # Returns whether the specified line of stream data is an overflow message for this subscription. Currently nothing
+    # is done with overflow messages if they occur.
+    def overflow_message?(line)
+      line =~ /^\d,\d,OV\d$/
+    end
+
     # Returns the regular expression that will match a single line of data in the incoming stream that is relevant to
     # this subscription. The ID at the beginning must match, as well as the number of fields.
-    def stream_data_regex
+    def stream_data_regexp
       Regexp.new "^#{id},(\\d+)#{'\|(.*)' * fields.size}"
     end
 
@@ -188,15 +196,10 @@ module Lightstreamer
       UTF16.decode_escape_sequences value
     end
 
-    # Invokes all of this subscription's data callbacks with the specified arguments. Any exceptions that occur in a
-    # data callback are reported on `stderr` but are otherwise ignored.
+    # Invokes all of this subscription's data callbacks with the specified arguments.
     def call_data_callbacks(item_name, item_data, new_values)
       @data_callbacks.each do |callback|
-        begin
-          callback.call self, item_name, item_data, new_values
-        rescue StandardError => error
-          warn "Lightstreamer: exception occurred in a subscription data callback: #{error}"
-        end
+        callback.call self, item_name, item_data, new_values
       end
     end
   end

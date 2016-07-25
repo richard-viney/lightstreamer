@@ -24,7 +24,9 @@ module Lightstreamer
         session.subscribe create_subscription
 
         loop do
-          puts @queue.pop
+          puts @queue.pop unless @queue.empty?
+
+          raise session.error if session.error
         end
       end
 

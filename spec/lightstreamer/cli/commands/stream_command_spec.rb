@@ -11,14 +11,12 @@ describe Lightstreamer::CLI::Main do
 
   let(:session) { instance_double 'Lightstreamer::Session' }
   let(:subscription) { instance_double 'Lightstreamer::Subscription' }
-  let(:queue) { Queue.new }
+  let(:queue) { instance_double 'Queue' }
 
   it 'prints stream data' do
     expect(Lightstreamer::Session).to receive(:new)
       .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set')
       .and_return(session)
-
-    expect(session).to receive(:connect)
 
     expect(Lightstreamer::Subscription).to receive(:new)
       .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil,
@@ -26,13 +24,16 @@ describe Lightstreamer::CLI::Main do
       .and_return(subscription)
 
     expect(subscription).to receive(:add_data_callback)
+
+    expect(session).to receive(:connect)
     expect(session).to receive(:subscribe).with(subscription)
+    expect(session).to receive(:error).twice.and_return(Lightstreamer::SessionEndError.new)
 
     expect(Queue).to receive(:new).and_return(queue)
-    expect(queue).to receive(:pop).and_return('Test')
-    expect(queue).to receive(:pop).and_raise(ExitLoopError)
+    expect(queue).to receive(:empty?).and_return(false)
+    expect(queue).to receive(:pop).once.and_return('Test')
 
-    expect { cli.stream }.to output("Test\n").to_stdout.and raise_error(ExitLoopError)
+    expect { cli.stream }.to output("Test\n").to_stdout.and raise_error(Lightstreamer::SessionEndError)
   end
 
   it 'formats new data correctly' do

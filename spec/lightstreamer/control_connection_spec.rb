@@ -6,7 +6,10 @@ describe Lightstreamer::ControlConnection do
   it 'handles a successful request' do
     body = { LS_session: 'session', LS_op: :test }
 
-    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(Typhoeus).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: body, timeout: 15)
+      .and_return(response)
+
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("OK\r\n")
 
@@ -16,7 +19,10 @@ describe Lightstreamer::ControlConnection do
   it 'handles an unsuccessful request' do
     body = { LS_session: 'session', LS_op: :test }
 
-    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(Typhoeus).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: body, timeout: 15)
+      .and_return(response)
+
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("ERROR\r\n1\r\nError message\r\n")
 
@@ -40,7 +46,10 @@ describe Lightstreamer::ControlConnection do
     body = { LS_session: 'session', LS_table: 1, LS_op: :add, LS_data_adapter: 'adapter', LS_id: 'a b',
              LS_schema: 'x y', LS_mode: 'MERGE' }
 
-    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(Typhoeus).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: body, timeout: 15)
+      .and_return(response)
+
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("OK\r\n")
 
@@ -50,7 +59,10 @@ describe Lightstreamer::ControlConnection do
   it 'ignores a nil subscription adapter' do
     body = { LS_session: 'session', LS_table: 1, LS_op: :delete }
 
-    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(Typhoeus).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: body, timeout: 15)
+      .and_return(response)
+
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return('OK')
 

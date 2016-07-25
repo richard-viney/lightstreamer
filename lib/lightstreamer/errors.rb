@@ -144,12 +144,16 @@ module Lightstreamer
     # Initializes this request error with a message and an HTTP code.
     #
     # @param [String] message The error description.
-    # @param [Integer] code The HTTP code for the request failure, if known.
+    # @param [Fixnum] code The HTTP code for the request failure, if known.
     def initialize(message, code)
       @request_error_message = message
-      @request_error_code = code.to_i
+      @request_error_code = code
 
-      super "Request error #{code}: #{message}"
+      if code != 0
+        super "#{code}: #{message}"
+      else
+        super message
+      end
     end
   end
 
@@ -170,7 +174,7 @@ module Lightstreamer
       elsif code <= 0
         MetadataAdapterError.new message, code
       else
-        new message
+        new "#{code}: #{message}"
       end
     end
 
