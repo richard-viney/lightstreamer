@@ -134,6 +134,8 @@ module Lightstreamer
     # Starts the processing thread that reads and processes incoming data from the stream connection.
     def create_processing_thread
       @processing_thread = Thread.new do
+        Thread.current.abort_on_exception = true
+
         loop do
           line = @stream_connection.read_line
 
@@ -146,8 +148,6 @@ module Lightstreamer
         warn "Lightstreamer: processing thread exiting, error: #{@stream_connection.error}"
         @processing_thread = @stream_connection = @control_connection = nil
       end
-
-      @processing_thread.abort_on_exception = true
     end
 
     # Processes a single line of incoming stream data by passing it to all the active subscriptions until one

@@ -73,6 +73,8 @@ module Lightstreamer
 
     def create_stream_thread
       @thread = Thread.new do
+        Thread.current.abort_on_exception = true
+
         connect_stream_and_process_data stream_create_post_request
 
         while @loop
@@ -82,8 +84,6 @@ module Lightstreamer
 
         @thread = nil
       end
-
-      @thread.abort_on_exception = true
     end
 
     def stream_create_post_request

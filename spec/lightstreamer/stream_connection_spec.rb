@@ -40,7 +40,7 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.connected?).to be false
   end
 
-  it 'creates and runs a stream connection which rebinds once then is terminated by the server' do
+  it 'creates and runs a stream connection which rebinds once and is then terminated by the server' do
     bind_request = instance_double 'Typhoeus::Request'
     bind_params = { LS_session: 'A' }
 
@@ -73,6 +73,8 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.read_line).to eq('two')
     expect(stream_connection.read_line).to eq('three')
     expect(stream_connection.read_line).to eq('four')
+
+    loop { break unless stream_connection.connected? }
   end
 
   it 'handles an HTTP error on the stream thread' do
