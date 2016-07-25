@@ -2,8 +2,8 @@ module Lightstreamer
   # Helper class that processes the contents of the header returned by the server when a new stream connection is
   # created or an existing session is bound to.
   class StreamConnectionHeader
-    # @return [ProtocolError, RequestError] If there was an error in the header then this value will be set to the
-    #         error instance that should be raised in response.
+    # @return [Error] If there was an error in the header then this value will be set to the error instance that should
+    #         be raised in response.
     attr_reader :error
 
     def initialize
@@ -20,20 +20,16 @@ module Lightstreamer
     def process_header_line(line)
       @lines << line
 
-      unless %w(OK ERROR).include? @lines.first
-        @error = RequestError.new line
-        return false
-      end
+      return process_success if @lines.first == 'OK'
+      return process_error if @lines.first == 'ERROR'
+      return process_end if @lines.first == 'END'
+      return process_sync_error if @lines.first == 'SYNC ERROR'
 
-      return true unless header_complete?
-
-      parse_header
-
-      false
+      process_unrecognized
     end
 
     # Returns the value for the item with the specified name in this header, or `nil` if no item with the specified name
-    # was part of this header
+    # was part of this header.
     #
     # @param [String] item_name The name of the item to return the header value for.
     #
@@ -45,19 +41,31 @@ module Lightstreamer
 
     private
 
-    def header_complete?
-      @lines.first == 'OK' && @lines.last.empty? || @lines.first == 'ERROR' && @lines.size == 3
+    def process_success
+      match = @lines.last.match(/^([^:]*):(.*)$/)
+      @data[match.captures[0]] = match.captures[1] if match
+
+      !@lines.last.empty?
     end
 
-    def parse_header
-      if @lines.first == 'OK'
-        @lines[1..-1].each do |line|
-          match = line.match(/^([^:]*):(.*)$/)
-          @data[match.captures[0]] = match.captures[1] if match
-        end
-      elsif @lines.first == 'ERROR'
-        @error = ProtocolError.new @lines[2], @lines[1]
-      end
+    def process_error
+      @error = Error.build @lines[2], @lines[1]
+      true
+    end
+
+    def process_end
+      @error = SessionEndError.new @lines[1]
+      true
+    end
+
+    def process_sync_error
+      @error = SyncError.new
+      false
+    end
+
+    def process_unrecognized
+      @error = Error.new @lines.join(' ')
+      true
     end
   end
 end

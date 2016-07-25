@@ -59,13 +59,9 @@ describe Lightstreamer::Session do
 
   it 'handles when the stream connection fails to connect' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
-    expect(stream_connection).to receive(:connect).and_raise(Lightstreamer::ProtocolError.new('Error message', 10))
+    expect(stream_connection).to receive(:connect).and_raise(Lightstreamer::AuthenticationError)
 
-    expect { session.connect }.to raise_error do |error|
-      expect(error).to be_a(Lightstreamer::ProtocolError)
-      expect(error.error).to eq('Error message')
-      expect(error.code).to eq(10)
-    end
+    expect { session.connect }.to raise_error(Lightstreamer::AuthenticationError)
   end
 
   it 'rebinds the stream connection' do

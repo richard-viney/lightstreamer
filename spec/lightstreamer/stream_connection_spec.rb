@@ -17,7 +17,30 @@ describe Lightstreamer::StreamConnection do
       .and_return(create_request)
   end
 
-  it 'creates and runs a stream connection' do
+  it 'creates and runs a stream connection with a simple lifecycle' do
+    on_body_block = nil
+
+    expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
+    expect(create_request).to receive(:on_complete)
+    expect(create_request).to receive(:run) do
+      on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\n"
+      loop {}
+    end
+
+    stream_connection = Lightstreamer::StreamConnection.new session
+    stream_connection.connect
+
+    expect(stream_connection.connected?).to be true
+
+    expect(stream_connection.read_line).to eq('one')
+    expect(stream_connection.read_line).to eq('two')
+
+    stream_connection.disconnect
+
+    expect(stream_connection.connected?).to be false
+  end
+
+  it 'creates and runs a stream connection which rebinds once then is terminated by the server' do
     bind_request = instance_double 'Typhoeus::Request'
     bind_params = { LS_session: 'A' }
 
@@ -27,6 +50,8 @@ describe Lightstreamer::StreamConnection do
     expect(create_request).to receive(:on_complete)
     expect(create_request).to receive(:run) do
       on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
+
+      sleep 0.1 # Gives the main thread a chance to get out of the spinlock in #connect. TODO: use condition var
     end
 
     expect(Typhoeus::Request).to receive(:new)
@@ -36,8 +61,7 @@ describe Lightstreamer::StreamConnection do
     expect(bind_request).to receive(:on_body) { |&block| on_body_block = block }
     expect(bind_request).to receive(:on_complete)
     expect(bind_request).to receive(:run) do
-      on_body_block.call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n"
-      sleep
+      on_body_block.call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\nEND\r\n"
     end
 
     stream_connection = Lightstreamer::StreamConnection.new session
@@ -49,10 +73,6 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.read_line).to eq('two')
     expect(stream_connection.read_line).to eq('three')
     expect(stream_connection.read_line).to eq('four')
-
-    stream_connection.disconnect
-
-    expect(stream_connection.connected?).to be false
   end
 
   it 'handles an HTTP error on the stream thread' do
@@ -71,8 +91,8 @@ describe Lightstreamer::StreamConnection do
 
     expect { Lightstreamer::StreamConnection.new(session).connect }.to raise_error do |error|
       expect(error).to be_a(Lightstreamer::RequestError)
-      expect(error.error).to eq('Error message')
-      expect(error.http_code).to eq(404)
+      expect(error.request_error_message).to eq('Error message')
+      expect(error.request_error_code).to eq(404)
     end
   end
 end

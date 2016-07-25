@@ -12,18 +12,18 @@ module Lightstreamer
     end
 
     # Sends a Lightstreamer control request that executes the specified operation with the specified options. If an
-    # error occurs then {RequestError} or {ProtocolError} will be raised.
+    # error occurs then an {Error} subclass will be raised.
     #
     # @param [String] operation The operation to execute.
     # @param [Hash] options The options to include on the request.
     def execute(operation, options = {})
       result = execute_post_request build_payload(operation, options)
 
-      raise ProtocolError.new(result[2], result[1]) if result.first != 'OK'
+      raise Error.build(result[2], result[1]) if result.first != 'OK'
     end
 
     # Sends a Lightstreamer subscription control request with the specified operation, table, and options. If an error
-    # occurs then {RequestError} or {ProtocolError} will be raised.
+    # occurs then an {Error} subclass will be raised.
     #
     # @param [:add, :add_silent, :start, :delete] operation The operation to execute.
     # @param [Fixnum] table The ID of the table this request pertains to

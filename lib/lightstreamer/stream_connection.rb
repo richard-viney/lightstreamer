@@ -11,8 +11,8 @@ module Lightstreamer
     # @return [String] The control address returned from the server when this stream connection was initiated.
     attr_reader :control_address
 
-    # @return [ProtocolError, RequestError, String] If an error occurs on the stream thread that causes this stream
-    #         to disconnect then the exception or error details will be stored in this attribute.
+    # @return [Error] If an error occurs on the stream thread that causes the stream to disconnect then the
+    #         error will be stored in this attribute.
     attr_reader :error
 
     # Establishes a new stream connection using the authentication details from the passed session.
@@ -27,7 +27,7 @@ module Lightstreamer
     end
 
     # Establishes a new stream connection using the authentication details from the session that was passed to
-    # {#initialize}. Raises {ProtocolError} or {RequestError} on failure.
+    # {#initialize}. Raises an {Error} subclass on failure.
     def connect
       return if @thread
       @session_id = @error = nil
@@ -51,7 +51,7 @@ module Lightstreamer
     # Disconnects this stream connection by shutting down the streaming thread.
     def disconnect
       if @thread
-        Thread.kill @thread
+        @thread.exit
         @thread.join
       end
 
@@ -108,6 +108,7 @@ module Lightstreamer
       end
 
       request.on_complete do |response|
+        @error = @header.error if @header
         @error = RequestError.new(response.return_message, response.response_code) unless response.success?
       end
 
@@ -127,7 +128,6 @@ module Lightstreamer
 
       @control_address = @header['ControlAddress']
       @session_id = @header['SessionId']
-      @error = @header.error
 
       @header = nil
     end
@@ -135,6 +135,8 @@ module Lightstreamer
     def process_body_line(line)
       if line == 'LOOP'
         @loop = true
+      elsif line =~ /^END/
+        @error = SessionEndError.new line[4..-1]
       elsif !ignore_line?(line)
         @queue.push line
       end

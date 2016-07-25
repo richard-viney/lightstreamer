@@ -32,7 +32,7 @@ module Lightstreamer
     end
 
     # Creates a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
-    # {ProtocolError} will be raised.
+    # an {Error} subclass will be raised.
     def connect
       return if @stream_connection
 
@@ -56,7 +56,7 @@ module Lightstreamer
       @stream_connection.disconnect if @stream_connection
 
       if @processing_thread
-        Thread.kill @processing_thread
+        @processing_thread.exit
         @processing_thread.join
       end
 
@@ -67,8 +67,7 @@ module Lightstreamer
     # Requests that the Lightstreamer server terminate the currently active stream connection and require that a new
     # stream connection be initiated by the client. The Lightstreamer server requires closure and re-establishment of
     # the stream connection periodically during normal operation, this method just allows such a reconnection to be
-    # requested explicitly by the client. If an error occurs then either {ProtocolError} or {RequestError} will be
-    # raised.
+    # requested explicitly by the client. If an error occurs then an {Error} subclass will be raised.
     def force_rebind
       return unless @stream_connection
 

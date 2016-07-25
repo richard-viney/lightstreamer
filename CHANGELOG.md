@@ -6,7 +6,12 @@
 - Added `Lightstreamer::Session#force_rebind` which asks the server to send a `LOOP` message so the client has to rebind 
   using a new stream connection
 - Added validation of the arguments for control connection subscription requests
+- All error classes now inherit from `Lightstreamer::Error` and the different Lightstreamer errors that can occur are
+  separated into a variety of new subclasses
+- Removed `Lightstreamer::ProtocolError`
 - Fixed handling of `nil` subscription adapters
+- Correctly handle when an `END` message is received on the stream connection
+- All valid error responses from session create and bind requests are now handled correctly
 - Unhandled exceptions on the internal worker threads now cause the application to terminate
 
 ### 0.3 — July 24, 2016

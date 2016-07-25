@@ -18,9 +18,9 @@ describe Lightstreamer::ControlConnection do
 
     expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
     expect(response).to receive(:success?).and_return(true)
-    expect(response).to receive(:body).and_return("ERROR\r\n10\r\nError message\r\n")
+    expect(response).to receive(:body).and_return("ERROR\r\n1\r\nError message\r\n")
 
-    expect { control_connection.execute :test }.to raise_error(Lightstreamer::ProtocolError)
+    expect { control_connection.execute :test }.to raise_error(Lightstreamer::AuthenticationError)
   end
 
   it 'handles a request error' do
@@ -31,8 +31,8 @@ describe Lightstreamer::ControlConnection do
 
     expect { control_connection.execute :operation }.to raise_error do |error|
       expect(error).to be_a(Lightstreamer::RequestError)
-      expect(error.error).to eq('Error message')
-      expect(error.http_code).to eq(404)
+      expect(error.request_error_message).to eq('Error message')
+      expect(error.request_error_code).to eq(404)
     end
   end
 
