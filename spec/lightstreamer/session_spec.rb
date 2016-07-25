@@ -68,13 +68,20 @@ describe Lightstreamer::Session do
     end
   end
 
+  it 'rebinds the stream connection' do
+    session.instance_variable_set :@stream_connection, stream_connection
+    session.instance_variable_set :@control_connection, control_connection
+    expect(control_connection).to receive(:execute).with(:force_rebind)
+    session.force_rebind
+  end
+
   it 'subscribes to new subscriptions' do
     session.instance_variable_set :@control_connection, control_connection
 
     expect(subscription).to receive(:clear_data)
-    expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :add, mode: :merge,
-                                                         items: subscription.items, fields: subscription.fields,
-                                                         adapter: subscription.adapter, maximum_update_frequency: 0.0)
+    expect(control_connection).to receive(:subscription_execute)
+      .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
+                                   adapter: subscription.adapter, maximum_update_frequency: 0.0)
 
     session.subscribe subscription
 
@@ -85,10 +92,10 @@ describe Lightstreamer::Session do
     session.instance_variable_set :@control_connection, control_connection
 
     expect(subscription).to receive(:clear_data)
-    expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :add, mode: :merge,
-                                                         items: subscription.items, fields: subscription.fields,
-                                                         adapter: subscription.adapter,
-                                                         maximum_update_frequency: 0.0).and_raise('test')
+    expect(control_connection).to receive(:subscription_execute)
+      .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
+                                   adapter: subscription.adapter, maximum_update_frequency: 0.0)
+      .and_raise('test')
 
     expect { session.subscribe subscription }.to raise_error('test')
 
@@ -99,7 +106,7 @@ describe Lightstreamer::Session do
     session.instance_variable_set :@control_connection, control_connection
     session.instance_variable_set :@subscriptions, [subscription]
 
-    expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :delete)
+    expect(control_connection).to receive(:subscription_execute).with(:delete, subscription.id)
 
     session.unsubscribe subscription
 
@@ -114,7 +121,7 @@ describe Lightstreamer::Session do
     session.instance_variable_set :@control_connection, control_connection
     session.instance_variable_set :@subscriptions, [subscription]
 
-    expect(control_connection).to receive(:execute).with(table: subscription.id, operation: :delete).and_raise('test')
+    expect(control_connection).to receive(:subscription_execute).with(:delete, subscription.id).and_raise('test')
 
     expect { session.unsubscribe subscription }.to raise_error('test')
 

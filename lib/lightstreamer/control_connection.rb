@@ -11,45 +11,50 @@ module Lightstreamer
       @control_url = URI.join(control_url, '/lightstreamer/control.txt').to_s
     end
 
-    # Sends a Lightstreamer control request with the specified options. If an error occurs then {RequestError} or
-    # {ProtocolError} will be raised.
+    # Sends a Lightstreamer control request that executes the specified operation with the specified options. If an
+    # error occurs then {RequestError} or {ProtocolError} will be raised.
     #
-    # @param [Hash] options The control request options.
-    # @option options [Fixnum] :table The ID of the table this request pertains to. Required.
-    # @option options [:add, :add_silent, :start, :delete] :operation The operation to perform. Required.
+    # @param [String] operation The operation to execute.
+    # @param [Hash] options The options to include on the request.
+    def execute(operation, options = {})
+      result = execute_post_request build_payload(operation, options)
+
+      raise ProtocolError.new(result[2], result[1]) if result.first != 'OK'
+    end
+
+    # Sends a Lightstreamer subscription control request with the specified operation, table, and options. If an error
+    # occurs then {RequestError} or {ProtocolError} will be raised.
+    #
+    # @param [:add, :add_silent, :start, :delete] operation The operation to execute.
+    # @param [Fixnum] table The ID of the table this request pertains to
+    # @param [Hash] options The subscription control request options.
     # @option options [String] :adapter The name of the data adapter to use. Optional.
     # @option options [Array<String>] :items The names of the items that this request pertains to. Required if
-    #                 `:operation` is `:add` or `:add_silent`.
+    #                 `operation` is `:add` or `:add_silent`.
     # @option options [Array<String>] :fields The names of the fields that this request pertains to. Required if
-    #                 `:operation` is `:add` or `:add_silent`.
-    # @option options [:distinct, :merge] :mode The subscription mode.
-    def execute(options)
-      validate_options options
+    #                 `operation` is `:add` or `:add_silent`.
+    # @option options [:distinct, :merge] :mode The subscription mode. Required if `operation` is `:add` or
+    #                 `:add_silent`.
+    def subscription_execute(operation, table, options = {})
+      options[:table] = table
 
-      result = execute_post_request build_payload(options)
+      validate_subscription_options operation, options
 
-      raise ProtocolError.new(result[2], result[1]) if result.first == 'ERROR'
+      execute operation, options
     end
 
     private
 
-    # Validates the passed control request options.
-    def validate_options(options)
-      validate_required_options options
-      validate_add_options options if [:add, :add_silent].include? options[:operation]
-    end
-
-    # Validates options required for all control requests.
-    def validate_required_options(options)
+    # Validates the passed subscription control request options.
+    def validate_subscription_options(operation, options)
       raise ArgumentError, 'Invalid table' unless options[:table].is_a? Fixnum
+      raise ArgumentError, 'Unsupported operation' unless [:add, :add_silent, :start, :delete].include? operation
 
-      unless [:add, :add_silent, :start, :delete].include? options[:operation]
-        raise ArgumentError, 'Unsupported operation'
-      end
+      validate_add_subscription_options options if [:add, :add_silent].include? operation
     end
 
-    # Validates options required for control requests that perform `add` operations.
-    def validate_add_options(options)
+    # Validates options required for subscription control requests that perform `add` operations.
+    def validate_add_subscription_options(options)
       raise ArgumentError, 'Items not specified' if Array(options[:items]).empty?
       raise ArgumentError, 'Fields not specified' if Array(options[:fields]).empty?
       raise ArgumentError, 'Unsupported mode' unless [:distinct, :merge].include? options[:mode]
@@ -67,26 +72,37 @@ module Lightstreamer
 
     # Constructs the payload for a Lightstreamer control request based on the given options hash. See {#execute} for
     # details on the supported keys.
-    def build_payload(options)
-      params = {
-        LS_session: @session_id,
-        LS_table: options.fetch(:table),
-        LS_op: options.fetch(:operation)
-      }
+    def build_payload(operation, options)
+      params = {}
 
       build_optional_payload_fields options, params
+
+      params[:LS_session] = @session_id
+      params[:LS_op] = operation
 
       params
     end
 
+    OPTION_NAME_TO_API_PARAMETER = {
+      table: :LS_table,
+      adapter: :LS_data_adapter,
+      items: :LS_id,
+      fields: :LS_schema,
+      maximum_update_frequency: :LS_requested_max_frequency
+    }.freeze
+
     def build_optional_payload_fields(options, params)
       params[:LS_mode] = options[:mode].to_s.upcase if options[:mode]
 
-      { adapter: :LS_data_adapter, items: :LS_id, fields: :LS_schema,
-        maximum_update_frequency: :LS_requested_max_frequency }.each do |option, param_name|
-        next unless options[option]
+      options.each do |key, value|
+        next if key == :mode
+        next if value.nil?
 
-        params[param_name] = options[option].is_a?(Array) ? options[option].map(&:to_s).join(' ') : options[option]
+        value = value.map(&:to_s).join(' ') if value.is_a? Array
+
+        api_parameter = OPTION_NAME_TO_API_PARAMETER.fetch key
+
+        params[api_parameter] = value
       end
     end
   end

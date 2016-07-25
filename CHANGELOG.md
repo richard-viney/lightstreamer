@@ -3,7 +3,9 @@
 ### 0.4 — Unreleased
 
 - Added support for specifying a subscription's maximum update frequency
-- Added validation of the arguments for control connection requests
+- Added `Lightstreamer::Session#force_rebind` which asks the server to send a `LOOP` message so the client has to rebind 
+  using a new stream connection
+- Added validation of the arguments for control connection subscription requests
 - Fixed handling of `nil` subscription adapters
 - Unhandled exceptions on the internal worker threads now cause the application to terminate
 

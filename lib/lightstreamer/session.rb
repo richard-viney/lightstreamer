@@ -64,6 +64,17 @@ module Lightstreamer
       @subscriptions = []
     end
 
+    # Requests that the Lightstreamer server terminate the currently active stream connection and require that a new
+    # stream connection be initiated by the client. The Lightstreamer server requires closure and re-establishment of
+    # the stream connection periodically during normal operation, this method just allows such a reconnection to be
+    # requested explicitly by the client. If an error occurs then either {ProtocolError} or {RequestError} will be
+    # raised.
+    def force_rebind
+      return unless @stream_connection
+
+      @control_connection.execute :force_rebind
+    end
+
     # Subscribes this Lightstreamer session to the specified subscription.
     #
     # @param [Subscription] subscription The new subscription to subscribe to.
@@ -73,9 +84,10 @@ module Lightstreamer
       @subscriptions_mutex.synchronize { @subscriptions << subscription }
 
       begin
-        @control_connection.execute operation: :add, maximum_update_frequency: subscription.maximum_update_frequency,
-                                    table: subscription.id, mode: subscription.mode, items: subscription.items,
-                                    fields: subscription.fields, adapter: subscription.adapter
+        options = { mode: subscription.mode, items: subscription.items, fields: subscription.fields,
+                    adapter: subscription.adapter, maximum_update_frequency: subscription.maximum_update_frequency }
+
+        @control_connection.subscription_execute :add, subscription.id, options
       rescue
         @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
         raise
@@ -97,7 +109,7 @@ module Lightstreamer
     def unsubscribe(subscription)
       raise ArgumentError, 'Unknown subscription' unless subscribed? subscription
 
-      @control_connection.execute table: subscription.id, operation: :delete
+      @control_connection.subscription_execute :delete, subscription.id
 
       @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
     end

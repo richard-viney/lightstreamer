@@ -4,51 +4,23 @@ describe Lightstreamer::ControlConnection do
   let(:control_connection) { Lightstreamer::ControlConnection.new 'session', 'http://a.com' }
 
   it 'handles a successful request' do
-    body = { LS_session: 'session', LS_table: 1, LS_op: :add, LS_data_adapter: 'adapter', LS_id: 'a b',
-             LS_schema: 'x y', LS_mode: 'MERGE' }
+    body = { LS_session: 'session', LS_op: :test }
 
     expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("OK\r\n")
 
-    control_connection.execute table: 1, operation: :add, adapter: 'adapter', items: %w(a b),
-                               fields: %w(x y), mode: :merge
+    control_connection.execute :test
   end
 
   it 'handles an unsuccessful request' do
-    body = { LS_session: 'session', LS_table: 1, LS_op: :delete }
+    body = { LS_session: 'session', LS_op: :test }
 
     expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("ERROR\r\n10\r\nError message\r\n")
 
-    expect { control_connection.execute table: 1, operation: :delete }.to raise_error(Lightstreamer::ProtocolError)
-  end
-
-  it 'handles a nil adapter' do
-    body = { LS_session: 'session', LS_table: 1, LS_op: :delete }
-
-    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
-    expect(response).to receive(:success?).and_return(true)
-    expect(response).to receive(:body).and_return('OK')
-
-    control_connection.execute table: 1, operation: :delete, adapter: nil
-  end
-
-  it 'raises an error on invalid options' do
-    [
-      {},
-      { table: 1, operation: :invalid },
-      { table: '1', operation: :add },
-      { table: 1, operation: :add, items: nil, fields: nil },
-      { table: 1, operation: :add, items: [], fields: [] },
-      { table: 1, operation: :add, items: ['a'], fields: [] },
-      { table: 1, operation: :add, items: [], fields: ['a'] },
-      { table: 1, operation: :add, items: ['1'], fields: ['a'] },
-      { table: 1, operation: :add, items: ['1'], fields: ['a'], mode: :invalid }
-    ].each do |options|
-      expect { control_connection.execute options }.to raise_error(ArgumentError)
-    end
+    expect { control_connection.execute :test }.to raise_error(Lightstreamer::ProtocolError)
   end
 
   it 'handles a request error' do
@@ -57,10 +29,51 @@ describe Lightstreamer::ControlConnection do
     expect(response).to receive(:return_message).and_return('Error message')
     expect(response).to receive(:response_code).and_return(404)
 
-    expect { control_connection.execute table: 1, operation: :delete }.to raise_error do |error|
+    expect { control_connection.execute :operation }.to raise_error do |error|
       expect(error).to be_a(Lightstreamer::RequestError)
       expect(error.error).to eq('Error message')
       expect(error.http_code).to eq(404)
+    end
+  end
+
+  it 'makes a subscription request' do
+    body = { LS_session: 'session', LS_table: 1, LS_op: :add, LS_data_adapter: 'adapter', LS_id: 'a b',
+             LS_schema: 'x y', LS_mode: 'MERGE' }
+
+    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(response).to receive(:success?).and_return(true)
+    expect(response).to receive(:body).and_return("OK\r\n")
+
+    control_connection.subscription_execute :add, 1, adapter: 'adapter', items: %w(a b), fields: %w(x y), mode: :merge
+  end
+
+  it 'ignores a nil subscription adapter' do
+    body = { LS_session: 'session', LS_table: 1, LS_op: :delete }
+
+    expect(Typhoeus).to receive(:post).with('http://a.com/lightstreamer/control.txt', body: body).and_return(response)
+    expect(response).to receive(:success?).and_return(true)
+    expect(response).to receive(:body).and_return('OK')
+
+    control_connection.subscription_execute :delete, 1, adapter: nil
+  end
+
+  it 'raises an error on invalid subscription options' do
+    [
+      [:invalid, 1],
+      [:add, '1'],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: nil, fields: nil }],
+      [:add, 1, { items: [], fields: [] }],
+      [:add, 1, { items: ['a'], fields: [] }],
+      [:add, 1, { items: [], fields: ['a'] }],
+      [:add, 1, { items: ['1'], fields: ['a'] }],
+      [:add, 1, { items: ['1'], fields: ['a'], mode: :invalid }]
+    ].each do |args|
+      expect { control_connection.subscription_execute(*args) }.to raise_error(ArgumentError)
     end
   end
 end
