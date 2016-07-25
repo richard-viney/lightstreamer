@@ -18,7 +18,7 @@ describe Lightstreamer::Session do
     end
 
     def join_processing_thread(session)
-      thread = session.instance_variable_get(:@processing_thread)
+      thread = session.instance_variable_get :@processing_thread
       thread.join if thread
     end
 

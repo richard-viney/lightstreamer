@@ -25,8 +25,7 @@ module Lightstreamer
         return false
       end
 
-      return true if @lines.first == 'OK' && !line.empty?
-      return true if @lines.first == 'ERROR' && @lines.size < 3
+      return true unless header_complete?
 
       parse_header
 
@@ -45,6 +44,10 @@ module Lightstreamer
     end
 
     private
+
+    def header_complete?
+      @lines.first == 'OK' && @lines.last.empty? || @lines.first == 'ERROR' && @lines.size == 3
+    end
 
     def parse_header
       if @lines.first == 'OK'
