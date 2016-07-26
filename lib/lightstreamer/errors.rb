@@ -106,6 +106,9 @@ module Lightstreamer
     attr_reader :adapter_error_code
 
     # Initializes this metadata adapter error with the specified error message and error code.
+    #
+    # @param [String] message The error message.
+    # @param [Fixnum] code The error code.
     def initialize(message, code)
       @adapter_error_message = message
       @adapter_error_code = code.to_i
