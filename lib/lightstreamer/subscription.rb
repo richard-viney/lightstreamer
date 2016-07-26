@@ -1,7 +1,7 @@
 module Lightstreamer
   # Describes a subscription that can be bound to a {Session} in order to consume its streaming data. A subscription is
   # described by the options passed to {#initialize}. Incoming data can be consumed by registering an asynchronous data
-  # callback using {#on_data}, or by polling {#retrieve_item_data}. Subscriptions start receiving data once they are
+  # callback using {#on_data} or by polling using {#item_data}. Subscriptions start receiving data once they are
   # attached to a session using {Session#subscribe}.
   class Subscription
     # The unique identification number of this subscription.
@@ -75,27 +75,13 @@ module Lightstreamer
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
     # available.
     def clear_data
-      @data_mutex.synchronize do
-        @data = (0...items.size).map { { distinct: [], merge: {} }.fetch(mode) }
-      end
-    end
-
-    # Clears the current data stored for the specified item. This is important to do when {#mode} is `:distinct` as
-    # otherwise the incoming data will build up indefinitely.
-    #
-    # @param [String] item_name The name of the item to clear the current data for.
-    def clear_data_for_item(item_name)
-      index = @items.index item_name
-      raise ArgumentError, 'Unrecognized item name' unless index
-
-      @data_mutex.synchronize do
-        @data[index] = { distinct: [], merge: {} }.fetch(mode)
-      end
+      @data = (0...items.size).map { {} }
     end
 
     # Adds the passed block to the list of callbacks that will be run when new data for this subscription arrives. The
     # block will be called on a worker thread and so the code that is run by the block must be thread-safe. The
-    # arguments passed to the block are `|subscription, item_name, item_data, new_values|`.
+    # arguments passed to the block are `|subscription, item_name, item_data, new_values|`. If {#mode} is `:distinct`
+    # then the values of `item_data` and `new_values` will be the same.
     #
     # @param [Proc] callback The callback that is to be run when new data arrives.
     def on_data(&callback)
@@ -115,7 +101,7 @@ module Lightstreamer
       end
     end
 
-    # Removes all `on_data` and `on_overflow` callbacks present on this subscription.
+    # Removes all {#on_data} and {#on_overflow} callbacks present on this subscription.
     def clear_callbacks
       @data_mutex.synchronize do
         @callbacks = { on_data: [], on_overflow: [] }
@@ -126,11 +112,10 @@ module Lightstreamer
     #
     # @param [String] item_name The name of the item to return the current data for.
     #
-    # @return [Hash, Array] A copy of the item data. Will be a `Hash` if {#mode} is `:merge`, and an `Array` if {#mode}
-    #         is `:distinct`.
-    def retrieve_item_data(item_name)
+    # @return [Hash] A copy of the item data.
+    def item_data(item_name)
       index = @items.index item_name
-      raise ArgumentError, 'Unrecognized item name' unless index
+      raise ArgumentError, 'Unknown item' unless index
 
       @data_mutex.synchronize do
         @data[index].dup
@@ -176,12 +161,10 @@ module Lightstreamer
     def process_new_values(item_index, new_values)
       data = @data[item_index]
 
-      data << new_values if mode == :distinct
+      data.replace(new_values) if mode == :distinct
       data.merge!(new_values) if mode == :merge
 
-      @callbacks[:on_data].each do |callback|
-        callback.call self, @items[item_index], data, new_values
-      end
+      run_callbacks :on_data, @items[item_index], data, new_values
     end
 
     def process_overflow_message(line)
@@ -189,12 +172,16 @@ module Lightstreamer
       return unless overflow_message
 
       @data_mutex.synchronize do
-        @callbacks[:on_overflow].each do |callback|
-          callback.call self, @items[overflow_message.item_index], overflow_message.overflow_size
-        end
+        run_callbacks :on_overflow, @items[overflow_message.item_index], overflow_message.overflow_size
       end
 
       true
+    end
+
+    def run_callbacks(callback_type, *arguments)
+      @callbacks.fetch(callback_type).each do |callback|
+        callback.call self, *arguments
+      end
     end
   end
 end

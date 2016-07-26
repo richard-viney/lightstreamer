@@ -22,8 +22,7 @@ describe Lightstreamer::Subscription do
   end
 
   it 'raises an exception on unknown items' do
-    expect { subscription.retrieve_item_data :item3 }.to raise_error(ArgumentError)
-    expect { subscription.clear_data_for_item :item3 }.to raise_error(ArgumentError)
+    expect { subscription.item_data :item3 }.to raise_error(ArgumentError)
   end
 
   it 'invokes callbacks when new data arrives' do
@@ -81,18 +80,13 @@ describe Lightstreamer::Subscription do
     ].each do |hash|
       subscription.process_stream_data hash[:line]
 
-      expect(subscription.retrieve_item_data(:item1)).to eq(hash[:item1])
-      expect(subscription.retrieve_item_data(:item2)).to eq(hash[:item2])
+      expect(subscription.item_data(:item1)).to eq(hash[:item1])
+      expect(subscription.item_data(:item2)).to eq(hash[:item2])
     end
-
-    subscription.clear_data_for_item :item1
-
-    expect(subscription.retrieve_item_data(:item1)).to eq({})
-    expect(subscription.retrieve_item_data(:item2)).to eq(field1: 'c', field2: 'd')
 
     subscription.clear_data
 
-    expect(subscription.retrieve_item_data(:item1)).to eq({})
-    expect(subscription.retrieve_item_data(:item2)).to eq({})
+    expect(subscription.item_data(:item1)).to eq({})
+    expect(subscription.item_data(:item2)).to eq({})
   end
 end

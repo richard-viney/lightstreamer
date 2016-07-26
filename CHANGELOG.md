@@ -2,13 +2,17 @@
 
 ### 0.5 — Unreleased
 
-- Added explicit timeouts to all HTTP requests
+- Improved handling of `:distinct` subscriptions
+- Subscriptions can now request an unfiltered stream and handle any overflow messages from the server using
+  `Lightstreamer::Subscription#on_callback`
+- Added a connection timeout to all requests
 - Unhandled exceptions in subscription data callbacks are no longer automatically rescued
+- Improved API documentation
 - Renamed `Lightstreamer::Subscription#add_data_callback` to `Lightstreamer::Subscription#on_data`
 - Replaced `Lightstreamer::Subscription#remove_data_callback` with `Lightstreamer::Subscription#clear_callbacks`
-- Overflow messages can now be processed by the application using `Lightstreamer::Subscription#on_callback`
 - Renamed `Lightstreamer::Error` class to `Lightstreamer::LightstreamerError`
-- Improved documentation
+- Renamed `Lightstreamer::Subscription#retrieve_item_data` to `Lightstreamer::Subscription#item_data`
+- Removed `Lightstreamer::Subscription#clear_data_for_item`
 
 ### 0.4 — July 25, 2016
 
