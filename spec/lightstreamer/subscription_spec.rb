@@ -34,7 +34,8 @@ describe Lightstreamer::Subscription do
 
     expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2|c|")).to be true
-    expect(subscription.process_stream_data("#{subscription.id},2,OV2")).to be true
+    expect(subscription.process_stream_data("#{subscription.id},2,OV5")).to be true
+    expect(subscription.process_stream_data("#{subscription.id},99,OV123")).to be true
     expect(subscription.process_stream_data('0,3|d|e')).to be false
 
     expect(calls.count).to eq(4)

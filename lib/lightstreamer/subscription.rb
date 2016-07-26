@@ -163,7 +163,7 @@ module Lightstreamer
     # Returns whether the specified line of stream data is an overflow message for this subscription. Currently nothing
     # is done with overflow messages if they occur.
     def overflow_message?(line)
-      line =~ /^\d,\d,OV\d$/
+      line.match Regexp.new("^#{id},\\d+,OV\\d+$")
     end
 
     # Returns the regular expression that will match a single line of data in the incoming stream that is relevant to
