@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.6 — Unreleased
+
+- 
+
 ### 0.5 — July 26, 2016
 
 - Improved handling of `:distinct` subscriptions
