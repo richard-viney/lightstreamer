@@ -29,6 +29,9 @@ module Lightstreamer
 
       @stream_create_url = URI.join(session.server_url, '/lightstreamer/create_session.txt').to_s
       @stream_bind_url = URI.join(session.server_url, '/lightstreamer/bind_session.txt').to_s
+
+      @connect_result_mutex = Mutex.new
+      @connect_result_condition_variable = ConditionVariable.new
     end
 
     # Establishes a new stream connection using the authentication details from the session that was passed to
@@ -37,10 +40,10 @@ module Lightstreamer
       return if @thread
       @queue.clear
 
-      @connect_thread = Thread.current
-
-      create_stream_thread
-      sleep
+      @connect_result_mutex.synchronize do
+        create_stream_thread
+        @connect_result_condition_variable.wait @connect_result_mutex
+      end
 
       return unless @error
 
@@ -100,15 +103,11 @@ module Lightstreamer
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
-      Typhoeus::Request.new @stream_create_url, request_options(params)
+      Typhoeus::Request.new @stream_create_url, method: :post, connecttimeout: 15, params: params
     end
 
     def stream_bind_post_request
-      Typhoeus::Request.new @stream_bind_url, request_options(LS_session: @session_id)
-    end
-
-    def request_options(params)
-      { method: :post, params: params, connecttimeout: 15 }
+      Typhoeus::Request.new @stream_bind_url, method: :post, connecttimeout: 15, params: { LS_session: @session_id }
     end
 
     def connect_stream_and_process_data(request)
@@ -122,7 +121,7 @@ module Lightstreamer
       request.on_complete(&method(:on_request_complete))
       request.run
 
-      wakeup_connect_thread
+      signal_connect_result_ready
     end
 
     def on_request_complete(response)
@@ -130,9 +129,8 @@ module Lightstreamer
       @error = RequestError.new(response.return_message, response.response_code) unless response.success?
     end
 
-    def wakeup_connect_thread
-      @connect_thread.wakeup if @connect_thread
-      @connect_thread = nil
+    def signal_connect_result_ready
+      @connect_result_mutex.synchronize { @connect_result_condition_variable.signal }
     end
 
     def process_stream_line(line)
@@ -150,7 +148,7 @@ module Lightstreamer
       @control_address = @header['ControlAddress']
       @error = @header.error
 
-      wakeup_connect_thread
+      signal_connect_result_ready
 
       @header = nil
     end

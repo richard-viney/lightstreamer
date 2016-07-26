@@ -41,31 +41,31 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.connected?).to be false
   end
 
-  it 'creates and runs a stream connection which rebinds once and is then terminated by the server' do
+  it 'creates and runs a stream connection which rebinds itself in response to a LOOP message' do
     bind_request = instance_double 'Typhoeus::Request'
     bind_params = { LS_session: 'A' }
 
-    on_body_block = nil
-    stream_thread = nil
+    create_request_on_body_block = nil
 
-    expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
+    expect(create_request).to receive(:on_body) { |&block| create_request_on_body_block = block }
     expect(create_request).to receive(:on_complete)
     expect(create_request).to receive(:run) do
-      stream_thread = Thread.current
-
-      on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
-
-      sleep
+      create_request_on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
     end
 
     expect(Typhoeus::Request).to receive(:new)
       .with('http://test.com/lightstreamer/bind_session.txt', method: :post, params: bind_params, connecttimeout: 15)
       .and_return(bind_request)
 
-    expect(bind_request).to receive(:on_body) { |&block| on_body_block = block }
+    bind_request_on_body_block = nil
+    stream_thread = nil
+
+    expect(bind_request).to receive(:on_body) { |&block| bind_request_on_body_block = block }
     expect(bind_request).to receive(:on_complete)
     expect(bind_request).to receive(:run) do
-      on_body_block.call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\nEND\r\n"
+      stream_thread = Thread.current
+      bind_request_on_body_block.call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n"
+      sleep
     end
 
     stream_connection = Lightstreamer::StreamConnection.new session
@@ -75,11 +75,36 @@ describe Lightstreamer::StreamConnection do
 
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')
+    expect(stream_connection.read_line).to eq('three')
+    expect(stream_connection.read_line).to eq('four')
 
     stream_thread.run
 
+    loop { break unless stream_connection.connected? }
+  end
+
+  it 'creates and runs a stream connection which is terminated by the server' do
+    on_body_block = nil
+    stream_thread = nil
+
+    expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
+    expect(create_request).to receive(:on_complete)
+    expect(create_request).to receive(:run) do
+      stream_thread = Thread.current
+      on_body_block.call "OK\r\nSessionId:A\r\n\r\n"
+      sleep
+      on_body_block.call "one\r\ntwo\r\nEND\r\nthree\r\n"
+    end
+
+    stream_connection = Lightstreamer::StreamConnection.new session
+    stream_connection.connect
+
+    stream_thread.run
+
+    expect(stream_connection.read_line).to eq('one')
+    expect(stream_connection.read_line).to eq('two')
     expect(stream_connection.read_line).to eq('three')
-    expect(stream_connection.read_line).to eq('four')
+    expect(stream_connection.error).to be_a(Lightstreamer::SessionEndError)
 
     loop { break unless stream_connection.connected? }
   end
@@ -89,10 +114,7 @@ describe Lightstreamer::StreamConnection do
 
     expect(create_request).to receive(:on_body)
     expect(create_request).to receive(:on_complete) { |&block| on_complete_block = block }
-
-    expect(create_request).to receive(:run) do
-      on_complete_block.call create_response
-    end
+    expect(create_request).to receive(:run) { on_complete_block.call create_response }
 
     expect(create_response).to receive(:success?).and_return(false)
     expect(create_response).to receive(:return_message).and_return('Error message')
