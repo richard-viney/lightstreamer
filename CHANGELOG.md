@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.5 — Unreleased
+### 0.5 — July 26, 2016
 
 - Improved handling of `:distinct` subscriptions
 - Subscriptions can now request an unfiltered stream and handle any overflow messages from the server using
