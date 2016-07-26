@@ -42,7 +42,7 @@ module Lightstreamer
       def create_subscription
         subscription = Lightstreamer::Subscription.new subscription_options
 
-        subscription.add_data_callback(&method(:subscription_data_callback))
+        subscription.on_data(&method(:on_data))
 
         subscription
       end
@@ -54,7 +54,7 @@ module Lightstreamer
         }
       end
 
-      def subscription_data_callback(_subscription, item_name, _item_data, new_values)
+      def on_data(_subscription, item_name, _item_data, new_values)
         @queue.push "#{item_name} - #{new_values.map { |key, value| "#{key}: #{value}" }.join ', '}"
       end
     end

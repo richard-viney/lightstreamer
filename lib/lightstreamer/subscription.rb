@@ -1,40 +1,53 @@
 module Lightstreamer
   # Describes a subscription that can be bound to a {Session} in order to consume its streaming data. A subscription is
   # described by the options passed to {#initialize}. Incoming data can be consumed by registering an asynchronous data
-  # callback using {#add_data_callback}, or by polling {#retrieve_item_data}. Subscriptions start receiving data only
-  # once they are attached to a session using {Session#subscribe}.
+  # callback using {#on_data}, or by polling {#retrieve_item_data}. Subscriptions start receiving data once they are
+  # attached to a session using {Session#subscribe}.
   class Subscription
-    # @return [Fixnum] The unique identification number of this subscription. This is used to identify the subscription
-    #                  in incoming Lightstreamer data.
+    # The unique identification number of this subscription.
+    #
+    # @return [Fixnum]
     attr_reader :id
 
-    # @return [Array] The names of the items to subscribe to.
+    # The names of the items to subscribe to.
+    #
+    # @return [Array]
     attr_reader :items
 
-    # @return [Array] The names of the fields to subscribe to on the items.
+    # The names of the fields to subscribe to on the items.
+    #
+    # @return [Array]
     attr_reader :fields
 
-    # @return [:distinct, :merge] The operation mode of this subscription.
+    # The operation mode of this subscription.
+    #
+    # @return [:distinct, :merge]
     attr_reader :mode
 
-    # @return [String] The name of the data adapter from the Lightstreamer session's adapter set that should be used.
-    #                  If `nil` then the default data adapter will be used.
+    # The name of the data adapter from the Lightstreamer session's adapter set that should be used, or `nil` to use the
+    # default data adapter.
+    #
+    # @return [String, nil]
     attr_reader :adapter
 
-    # @return [String] The selector for table items. Optional.
+    # The selector for table items, or `nil` to specify no selector.
+    #
+    # @return [String, nil]
     attr_reader :selector
 
-    # @return [Float] The maximum number of updates this subscription should receive per second. If this is set to zero,
-    #         which is the default, then there is no limit on the update frequency.
+    # The maximum number of updates this subscription should receive per second. If this is set to zero, which is the
+    # default, then there is no limit on the update frequency.
+    #
+    # @return [Float]
     attr_reader :maximum_update_frequency
 
     # Initializes a new Lightstreamer subscription with the specified options. This can then be passed to
     # {Session#subscribe} to activate the subscription on a Lightstreamer session.
     #
     # @param [Hash] options The options to create the subscription with.
-    # @option options [Array] :items The names of the items to subscribe to.
-    # @option options [Array] :fields The names of the fields to subscribe to on the items.
-    # @option options [:distinct, :merge] :mode The operation mode of this subscription.
+    # @option options [Array] :items The names of the items to subscribe to. Required.
+    # @option options [Array] :fields The names of the fields to subscribe to on the items. Required.
+    # @option options [:distinct, :merge] :mode The operation mode of this subscription. Required.
     # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
     #                 should be used. If `nil` then the default data adapter will be used.
     # @option options [String] :selector The selector for table items. Optional.
@@ -53,7 +66,7 @@ module Lightstreamer
       @data_mutex = Mutex.new
       clear_data
 
-      @data_callbacks = []
+      @on_data_callbacks = []
     end
 
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
@@ -81,36 +94,22 @@ module Lightstreamer
     # block will be called on a worker thread and so the code that is run by the block must be thread-safe. The
     # arguments passed to the block are `|subscription, item_name, item_data, new_values|`.
     #
-    # @param [Proc] block The callback block that is to be run when new data arrives.
-    #
-    # @return [Proc] The same `Proc` object that was passed to this method. This can be used to remove this data
-    #         callback at a later stage using {#remove_data_callback}.
-    def add_data_callback(&block)
-      @data_mutex.synchronize { @data_callbacks << block }
-
-      block
+    # @param [Proc] callback The callback that is to be run when new data arrives.
+    def on_data(&callback)
+      @data_mutex.synchronize { @on_data_callbacks << callback }
     end
 
-    # Removes a data callback that was added by {#add_data_callback}.
-    #
-    # @param [Proc] block The data callback block to remove.
-    def remove_data_callback(block)
-      @data_mutex.synchronize { @data_callbacks.delete block }
-    end
-
-    # Returns the current data of one of this subscription's items.
+    # Returns a copy of the current data of one of this subscription's items.
     #
     # @param [String] item_name The name of the item to return the current data for.
     #
-    # @return [Hash, Array] The item data. Will be a `Hash` if {#mode} is `:merge`, and an `Array` if {#mode} is
-    #         `:distinct`.
+    # @return [Hash, Array] A copy of the item data. Will be a `Hash` if {#mode} is `:merge`, and an `Array` if {#mode}
+    #         is `:distinct`.
     def retrieve_item_data(item_name)
       index = @items.index item_name
       raise ArgumentError, 'Unrecognized item name' unless index
 
-      @data_mutex.synchronize do
-        @data[index].dup
-      end
+      @data_mutex.synchronize { @data[index].dup }
     end
 
     # Processes a line of stream data if it is relevant to this subscription. This method is thread-safe and is intended
@@ -120,6 +119,8 @@ module Lightstreamer
     #
     # @return [Boolean] Whether the passed line of stream data was relevant to this subscription and was successfully
     #         processed by it.
+    #
+    # @private
     def process_stream_data(line)
       return true if overflow_message? line
 
@@ -132,15 +133,17 @@ module Lightstreamer
         data << new_values if mode == :distinct
         data.merge!(new_values) if mode == :merge
 
-        call_data_callbacks @items[item_index], data, new_values
+        run_on_data_callbacks @items[item_index], data, new_values
       end
 
       true
     end
 
-    # Returns the next unique ID to use for a new subscription.
+    # Returns the next unique subscription ID.
     #
     # @return [Fixnum]
+    #
+    # @private
     def self.next_id
       @next_id ||= 0
       @next_id += 1
@@ -196,9 +199,9 @@ module Lightstreamer
       UTF16.decode_escape_sequences value
     end
 
-    # Invokes all of this subscription's data callbacks with the specified arguments.
-    def call_data_callbacks(item_name, item_data, new_values)
-      @data_callbacks.each do |callback|
+    # Runs all of this subscription's on_data callbacks with the specified arguments.
+    def run_on_data_callbacks(item_name, item_data, new_values)
+      @on_data_callbacks.each do |callback|
         callback.call self, item_name, item_data, new_values
       end
     end

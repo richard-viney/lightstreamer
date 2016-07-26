@@ -1,5 +1,7 @@
 module Lightstreamer
-  # This is an internal class used by {Session} and is responsible for sending Lightstreamer control requests.
+  # Helper class used by {Session} and is responsible for sending Lightstreamer control requests.
+  #
+  # @private
   class ControlConnection
     # Initializes this class for sending Lightstreamer control requests using the specified session ID and control
     # address.

@@ -44,7 +44,7 @@ describe Lightstreamer::Session do
 
     it 'handles when the stream connection dies' do
       expect(stream_connection).to receive(:read_line).and_return(nil)
-      expect(stream_connection).to receive(:error).and_return(Lightstreamer::SessionEndError.new)
+      expect(stream_connection).to receive(:error).and_return(Lightstreamer::SessionEndError.new(31))
 
       session.connect
 

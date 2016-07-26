@@ -1,13 +1,18 @@
 module Lightstreamer
-  # Helper class that takes an incoming stream of ASCII data and yields back individual lines as they become complete.
+  # Helper class used by {StreamConnection} that takes an incoming stream of ASCII data and yields back individual lines
+  # as they become complete.
+  #
+  # @private
   class LineBuffer
     def initialize
       @buffer = ''
     end
 
-    # Appends a new piece of ASCII data to this buffer. Any lines that are now complete will be yielded back.
+    # Appends a new piece of ASCII data to this buffer and yields back any lines that are now complete.
     #
     # @param [String] data The new piece of ASCII data.
+    #
+    # @yieldparam [String] line The new line that is now complete.
     def process(data)
       @buffer << data
 

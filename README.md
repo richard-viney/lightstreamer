@@ -53,7 +53,7 @@ queue = Queue.new
 
 # When new data becomes available for the subscription it will be put on the queue. This callback
 # will be run on a worker thread.
-subscription.add_data_callback do |subscription, item_name, item_data, new_values|
+subscription.on_data do |subscription, item_name, item_data, new_values|
   queue.push item_data
 end
 

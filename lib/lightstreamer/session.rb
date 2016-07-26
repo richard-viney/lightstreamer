@@ -2,30 +2,40 @@ module Lightstreamer
   # This class is responsible for managing a Lightstreamer session, and along with the {Subscription} class is the
   # primary interface for working with Lightstreamer.
   class Session
-    # @return [String] The URL of the Lightstreamer server to connect to. Set by {#initialize}.
+    # The URL of the Lightstreamer server to connect to. Set by {#initialize}.
+    #
+    # @return [String]
     attr_reader :server_url
 
-    # @return [String] The username to connect to the Lightstreamer server with. Set by {#initialize}.
+    # The username to connect to the Lightstreamer server with. Set by {#initialize}.
+    #
+    # @return [String, nil]
     attr_reader :username
 
-    # @return [String] The password to connect to the Lightstreamer server with. Set by {#initialize}.
+    # The password to connect to the Lightstreamer server with. Set by {#initialize}.
+    #
+    # @return [String, nil]
     attr_reader :password
 
-    # @return [String] The name of the adapter set to request from the Lightstreamer server. Set by {#initialize}.
+    # The name of the adapter set to request from the Lightstreamer server. Set by {#initialize}.
+    #
+    # @return [String, nil]
     attr_reader :adapter_set
 
-    # @return [Error] If an error occurs on the stream connection that causes the session to terminate then details of
-    #         the error will be stored in this attribute. If the session is terminated as a result of calling
-    #         {#disconnect} then the error will be {SessionEndError}.
+    # If an error occurs on the stream connection that causes the session to terminate then details of the error will be
+    # stored in this attribute. If the session is terminated as a result of calling {#disconnect} then the error will be
+    # {SessionEndError}.
+    #
+    # @return [Error, nil]
     attr_reader :error
 
     # Initializes this new Lightstreamer session with the passed options.
     #
     # @param [Hash] options The options to create the session with.
     # @option options [String] :server_url The URL of the Lightstreamer server. Required.
-    # @option options [String] :username The username to connect to the server with. Optional.
-    # @option options [String] :password The password to connect to the server with. Optional.
-    # @option options [String] :adapter_set The name of the adapter set to request from the server. Optional.
+    # @option options [String] :username The username to connect to the server with.
+    # @option options [String] :password The password to connect to the server with.
+    # @option options [String] :adapter_set The name of the adapter set to request from the server.
     def initialize(options = {})
       @subscriptions = []
       @subscriptions_mutex = Mutex.new

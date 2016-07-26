@@ -23,11 +23,11 @@ describe Lightstreamer::CLI::Main do
             selector: nil)
       .and_return(subscription)
 
-    expect(subscription).to receive(:add_data_callback)
+    expect(subscription).to receive(:on_data)
 
     expect(session).to receive(:connect)
     expect(session).to receive(:subscribe).with(subscription)
-    expect(session).to receive(:error).twice.and_return(Lightstreamer::SessionEndError.new)
+    expect(session).to receive(:error).twice.and_return(Lightstreamer::SessionEndError.new(31))
 
     expect(Queue).to receive(:new).and_return(queue)
     expect(queue).to receive(:empty?).and_return(false)
@@ -40,6 +40,6 @@ describe Lightstreamer::CLI::Main do
     cli.instance_variable_set :@queue, queue
     expect(queue).to receive(:push).with('item - field1: 1, field2: 2')
 
-    cli.send(:subscription_data_callback, subscription, 'item', {}, field1: '1', field2: '2')
+    cli.send(:on_data, subscription, 'item', {}, field1: '1', field2: '2')
   end
 end

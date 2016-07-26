@@ -29,8 +29,8 @@ describe Lightstreamer::Subscription do
   it 'calls multiple data callbacks when new data arrives' do
     calls = []
 
-    first_callback = subscription.add_data_callback { |*args| calls << args }
-    second_callback = subscription.add_data_callback { |*args| calls << args }
+    subscription.on_data { |*args| calls << args }
+    subscription.on_data { |*args| calls << args }
 
     expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2|c|")).to be true
@@ -43,9 +43,6 @@ describe Lightstreamer::Subscription do
     expect(calls[1]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
     expect(calls[2]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
     expect(calls[3]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
-
-    expect(subscription.remove_data_callback(first_callback)).to eq(first_callback)
-    expect(subscription.remove_data_callback(second_callback)).to eq(second_callback)
   end
 
   it 'processes stream data' do

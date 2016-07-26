@@ -1,6 +1,6 @@
 describe Lightstreamer::MetadataAdapterError do
   it 'constructs from an error message and error code' do
-    error = Lightstreamer::MetadataAdapterError.new 'message', '-5'
+    error = Lightstreamer::MetadataAdapterError.new 'message', -5
 
     expect(error.adapter_error_message).to eq('message')
     expect(error.adapter_error_code).to eq(-5)

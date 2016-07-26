@@ -1,18 +1,23 @@
 module Lightstreamer
-  # Manages a long-running Lightstreamer connection that handles incoming streaming data on a separate thread and
-  # makes it available for consumption via the {#read_line} method.
+  # Internal class used by {Session} that manages a long-running Lightstreamer connection and handles incoming streaming
+  # data on a separate thread and makes it available for consumption through {#read_line}.
+  #
+  # @private
   class StreamConnection
-    # @return [Thread] The thread used to process incoming streaming data.
-    attr_reader :thread
-
-    # @return [String] The session ID returned from the server when this stream connection was initiated.
+    # The session ID returned from the server when this stream connection was initiated.
+    #
+    # @return [String, nil]
     attr_reader :session_id
 
-    # @return [String] The control address returned from the server when this stream connection was initiated.
+    # The control address returned from the server when this stream connection was initiated.
+    #
+    # @return [String, nil]
     attr_reader :control_address
 
-    # @return [Error] If an error occurs on the stream thread that causes the stream to disconnect then the
-    #         error will be stored in this attribute.
+    # If an error occurs on the stream thread that causes the stream to disconnect then the error will be stored in this
+    # attribute.
+    #
+    # @return [Error, nil]
     attr_reader :error
 
     # Establishes a new stream connection using the authentication details from the passed session.

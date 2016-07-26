@@ -1,9 +1,13 @@
 module Lightstreamer
-  # Helper class that processes the contents of the header returned by the server when a new stream connection is
-  # created or an existing session is bound to.
+  # Internal class used by {StreamConnection} that processes the contents of the header returned by the server when a
+  # new stream connection is created or an existing session is bound to.
+  #
+  # @private
   class StreamConnectionHeader
-    # @return [Error] If there was an error in the header then this value will be set to the error instance that should
-    #         be raised in response.
+    # If there was an error in the header then this value will be set to the error instance that should be raised in
+    # response.
+    #
+    # @return [Error, nil]
     attr_reader :error
 
     def initialize

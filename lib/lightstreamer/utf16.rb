@@ -1,5 +1,7 @@
 module Lightstreamer
   # This module supports the decoding of UTF-16 escape sequences
+  #
+  # @private
   module UTF16
     module_function
 

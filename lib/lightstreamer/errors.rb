@@ -1,5 +1,4 @@
 module Lightstreamer
-  # Base class for all errors raised by this gem.
   class Error < StandardError
   end
 
@@ -99,10 +98,14 @@ module Lightstreamer
 
   # This error is raised when a error defined by a metadata adapter is raised.
   class MetadataAdapterError < Error
-    # @return [String] The error message from the metadata adapter.
+    # The error message from the metadata adapter.
+    #
+    # @return [String]
     attr_reader :adapter_error_message
 
-    # @return [Fixnum] The error code from the metadata adapter.
+    # The error code from the metadata adapter.
+    #
+    # @return [Fixnum]
     attr_reader :adapter_error_code
 
     # Initializes this metadata adapter error with the specified error message and error code.
@@ -111,7 +114,7 @@ module Lightstreamer
     # @param [Fixnum] code The error code.
     def initialize(message, code)
       @adapter_error_message = message
-      @adapter_error_code = code.to_i
+      @adapter_error_code = code
 
       super message
     end
@@ -122,32 +125,50 @@ module Lightstreamer
   class SyncError < Error
   end
 
-  # This error is raised when the specified session ID is for a session that has been terminated.
+  # This error is raised when the session was explicitly closed on the server side. The reason for this is specified by
+  # {#cause_code}.
   class SessionEndError < Error
-    # @return [Fixnum] The cause code specifying why the session was terminated by the server, or `nil` if unknown.
+    # The cause code specifying why the session was terminated by the server, or `nil` if unknown.
+    #
+    # The following codes are defined, but other values are allowed and signal an unexpected cause.
+    #
+    # - `<=0` - The session was closed through a `destroy` request and this custom code was specified.
+    # - `31` - The session was closed through a `destroy` request.
+    # - `32` - The session was closed by the administrator through JMX.
+    # - `33`, `34` - An unexpected error occurred on the server.
+    # - `35` - Another session was opened on the metadata adapter and the metadata adpater only supports one session.
+    # - `40` - A manual rebind to the session was done by another client.
+    # - `48` - The maximum session duration configured on the server has been reached. This is meant as a way to refresh
+    #          the session and the client should recover by opening a new session immediately.
+    #
+    # @return [Fixnum, nil]
     attr_reader :cause_code
 
     # Initializes this session end error with the specified cause code.
     #
-    # @param [Fixnum] cause_code
-    def initialize(cause_code = nil)
-      @cause_code = cause_code.to_i
+    # @param [Session?] cause_code See {#cause_code} for details.
+    def initialize(cause_code)
+      @cause_code = cause_code && cause_code.to_i
       super()
     end
   end
 
   # This error is raised when an HTTP request error occurs.
   class RequestError < Error
-    # @return [String] A description of the request error that occurred.
+    # The description of the request error that occurred.
+    #
+    # @return [String]
     attr_reader :request_error_message
 
-    # @return [Fixnum] The HTTP code that was returned, or zero if unknown.
+    # The HTTP code that was returned, or zero if unknown.
+    #
+    # @return [Fixnum]
     attr_reader :request_error_code
 
     # Initializes this request error with a message and an HTTP code.
     #
     # @param [String] message The error description.
-    # @param [Fixnum] code The HTTP code for the request failure, if known.
+    # @param [Fixnum] code The HTTP code for the request failure, or zero if unknown.
     def initialize(message, code)
       @request_error_message = message
       @request_error_code = code
@@ -169,6 +190,8 @@ module Lightstreamer
     # @param [Fixnum] code The numeric error code that is used to determine which {Error} subclass to instantiate.
     #
     # @return [Error]
+    #
+    # @private
     def self.build(message, code)
       code = code.to_i
 
