@@ -108,7 +108,7 @@ module Lightstreamer
     end
 
     def request_options(params)
-      { method: :post, params: params, timeout: 60, connecttimeout: 15 }
+      { method: :post, params: params, connecttimeout: 15 }
     end
 
     def connect_stream_and_process_data(request)
