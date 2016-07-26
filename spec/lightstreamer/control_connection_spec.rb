@@ -16,7 +16,7 @@ describe Lightstreamer::ControlConnection do
     control_connection.execute :test
   end
 
-  it 'handles an unsuccessful request' do
+  it 'handles an error response' do
     body = { LS_session: 'session', LS_op: :test }
 
     expect(Typhoeus).to receive(:post)
@@ -27,6 +27,19 @@ describe Lightstreamer::ControlConnection do
     expect(response).to receive(:body).and_return("ERROR\r\n1\r\nError message\r\n")
 
     expect { control_connection.execute :test }.to raise_error(Lightstreamer::AuthenticationError)
+  end
+
+  it 'handles a sync error response' do
+    body = { LS_session: 'session', LS_op: :test }
+
+    expect(Typhoeus).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: body, timeout: 15)
+      .and_return(response)
+
+    expect(response).to receive(:success?).and_return(true)
+    expect(response).to receive(:body).and_return("SYNC ERROR\r\n")
+
+    expect { control_connection.execute :test }.to raise_error(Lightstreamer::SyncError)
   end
 
   it 'handles a request error' do
