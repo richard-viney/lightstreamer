@@ -47,7 +47,7 @@ module Lightstreamer
     end
 
     # Creates a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
-    # an {Error} subclass will be raised.
+    # a {LightstreamerError} subclass will be raised.
     def connect
       return if @stream_connection
 
@@ -84,15 +84,15 @@ module Lightstreamer
     # Requests that the Lightstreamer server terminate the currently active stream connection and require that a new
     # stream connection be initiated by the client. The Lightstreamer server requires closure and re-establishment of
     # the stream connection periodically during normal operation, this method just allows such a reconnection to be
-    # requested explicitly by the client. If an error occurs then an {Error} subclass will be raised.
+    # requested explicitly by the client. If an error occurs then a {LightstreamerError} subclass will be raised.
     def force_rebind
       return unless @stream_connection
 
       @control_connection.execute :force_rebind
     end
 
-    # Subscribes this Lightstreamer session to the specified subscription. If an error occurs then an {Error} subclass
-    # will be raised.
+    # Subscribes this Lightstreamer session to the specified subscription. If an error occurs then a
+    # {LightstreamerError} subclass will be raised.
     #
     # @param [Subscription] subscription The new subscription to subscribe to.
     def subscribe(subscription)

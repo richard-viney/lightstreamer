@@ -1,103 +1,103 @@
 module Lightstreamer
-  class Error < StandardError
+  class LightstreamerError < StandardError
   end
 
   # This error is raised when the session username and password check fails.
-  class AuthenticationError < Error
+  class AuthenticationError < LightstreamerError
   end
 
   # This error is raised when the requested adapter set is unknown.
-  class UnknownAdapterSetError < Error
+  class UnknownAdapterSetError < LightstreamerError
   end
 
   # This error is raise when trying to bind to a session that was initialized with a different and incompatible
   # communication protocol.
-  class IncompatibleSessionError < Error
+  class IncompatibleSessionError < LightstreamerError
   end
 
   # This error is raised when the licensed maximum number of sessions is reached.
-  class LicensedMaximumSessionsReachedError < Error
+  class LicensedMaximumSessionsReachedError < LightstreamerError
   end
 
   # This error is raised when the configured maximum number of sessions is reached.
-  class ConfiguredMaximumSessionsReachedError < Error
+  class ConfiguredMaximumSessionsReachedError < LightstreamerError
   end
 
   # This error is raised when the configured maximum server load is reached.
-  class ConfiguredMaximumServerLoadReachedError < Error
+  class ConfiguredMaximumServerLoadReachedError < LightstreamerError
   end
 
   # This error is raised when the creation of new sessions has been temporarily blocked.
-  class NewSessionsTemporarilyBlockedError < Error
+  class NewSessionsTemporarilyBlockedError < LightstreamerError
   end
 
   # This error is raised when streaming is not available because of the current license terms.
-  class StreamingNotAvailableError < Error
+  class StreamingNotAvailableError < LightstreamerError
   end
 
   # This error is raised when the specified table can't be modified because it is configured for unfiltered dispatching.
-  class TableModificationNotAllowedError < Error
+  class TableModificationNotAllowedError < LightstreamerError
   end
 
   # This error is raised when the specified data adapter is invalid or the data adapter is not specified and there is
   # no default data adapter.
-  class InvalidDataAdapterError < Error
+  class InvalidDataAdapterError < LightstreamerError
   end
 
   # This error occurs when the specified table is not found.
-  class UnknownTableError < Error
+  class UnknownTableError < LightstreamerError
   end
 
   # This error is raised when an invalid item name is specified.
-  class InvalidItemError < Error
+  class InvalidItemError < LightstreamerError
   end
 
   # This error is raised when an invalid item name for the given fields is specified.
-  class InvalidItemForFieldsError < Error
+  class InvalidItemForFieldsError < LightstreamerError
   end
 
   # This error is raised when an invalid field name is specified.
-  class InvalidFieldError < Error
+  class InvalidFieldError < LightstreamerError
   end
 
   # This error is raised when the specified subscription mode is not supported by one of the items.
-  class UnsupportedModeForItemError < Error
+  class UnsupportedModeForItemError < LightstreamerError
   end
 
   # This error is raised when an invalid selector is specified.
-  class InvalidSelectorError < Error
+  class InvalidSelectorError < LightstreamerError
   end
 
   # This error is raised when unfiltered dispatching is requested on an item that does not allow it.
-  class UnfilteredDispatchingNotAllowedForItemError < Error
+  class UnfilteredDispatchingNotAllowedForItemError < LightstreamerError
   end
 
   # This error is raised when unfiltered dispatching is requested on an item that does not support it.
-  class UnfilteredDispatchingNotSupportedForItemError < Error
+  class UnfilteredDispatchingNotSupportedForItemError < LightstreamerError
   end
 
   # This error is raised when unfiltered dispatching is requested but is not allowed by the current license terms.
-  class UnfilteredDispatchingNotAllowedByLicenseError < Error
+  class UnfilteredDispatchingNotAllowedByLicenseError < LightstreamerError
   end
 
   # This error is raised when `RAW` mode was requested but is not allowed by the current license terms.
-  class RawModeNotAllowedByLicenseError < Error
+  class RawModeNotAllowedByLicenseError < LightstreamerError
   end
 
   # This error is raised when subscriptions are not allowed by the current license terms.
-  class SubscriptionsNotAllowedByLicenseError < Error
+  class SubscriptionsNotAllowedByLicenseError < LightstreamerError
   end
 
   # This error is raised when the specified progressive sequence number for the custom message was invalid.
-  class InvalidProgressiveNumberError < Error
+  class InvalidProgressiveNumberError < LightstreamerError
   end
 
   # This error is raised when the client version requested is not supported by the server.
-  class ClientVersionNotSupportedError < Error
+  class ClientVersionNotSupportedError < LightstreamerError
   end
 
   # This error is raised when a error defined by a metadata adapter is raised.
-  class MetadataAdapterError < Error
+  class MetadataAdapterError < LightstreamerError
     # The error message from the metadata adapter.
     #
     # @return [String]
@@ -122,12 +122,12 @@ module Lightstreamer
 
   # This error is raised when a sync error occurs, which most often means that the session ID provided is invalid and
   # a new session needs to be created.
-  class SyncError < Error
+  class SyncError < LightstreamerError
   end
 
   # This error is raised when the session was explicitly closed on the server side. The reason for this is specified by
   # {#cause_code}.
-  class SessionEndError < Error
+  class SessionEndError < LightstreamerError
     # The cause code specifying why the session was terminated by the server, or `nil` if unknown.
     #
     # The following codes are defined, but other values are allowed and signal an unexpected cause.
@@ -154,7 +154,7 @@ module Lightstreamer
   end
 
   # This error is raised when an HTTP request error occurs.
-  class RequestError < Error
+  class RequestError < LightstreamerError
     # The description of the request error that occurred.
     #
     # @return [String]
@@ -182,12 +182,13 @@ module Lightstreamer
   end
 
   # Base class for all errors raised by this gem.
-  class Error
+  class LightstreamerError
     # Takes a Lightstreamer error message and numeric code and returns an instance of the relevant error class that
     # should be raised in response to the error.
     #
     # @param [String] message The error message.
-    # @param [Fixnum] code The numeric error code that is used to determine which {Error} subclass to instantiate.
+    # @param [Fixnum] code The numeric error code that is used to determine which {LightstreamerError} subclass to
+    #        instantiate.
     #
     # @return [Error]
     #

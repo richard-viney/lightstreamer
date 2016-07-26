@@ -32,7 +32,7 @@ module Lightstreamer
     end
 
     # Establishes a new stream connection using the authentication details from the session that was passed to
-    # {#initialize}. Raises an {Error} subclass on failure.
+    # {#initialize}. Raises a {LightstreamerError} subclass on failure.
     def connect
       return if @thread
       @queue.clear

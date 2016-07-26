@@ -43,7 +43,7 @@ describe Lightstreamer::StreamConnectionHeader do
     expect(header.process_header_line('Unknown')).to be true
     expect(header.process_header_line('data')).to be true
 
-    expect(header.error).to be_a(Lightstreamer::Error)
+    expect(header.error).to be_a(Lightstreamer::LightstreamerError)
     expect(header.error.message).to eq('Unknown data')
   end
 end

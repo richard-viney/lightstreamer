@@ -53,7 +53,7 @@ module Lightstreamer
     end
 
     def process_error
-      @error = Error.build @lines[2], @lines[1]
+      @error = LightstreamerError.build @lines[2], @lines[1]
       true
     end
 
@@ -68,7 +68,7 @@ module Lightstreamer
     end
 
     def process_unrecognized
-      @error = Error.new @lines.join(' ')
+      @error = LightstreamerError.new @lines.join(' ')
       true
     end
   end

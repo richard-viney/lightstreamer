@@ -33,7 +33,7 @@ describe Lightstreamer::RequestError do
   end
 end
 
-describe Lightstreamer::Error do
+describe Lightstreamer::LightstreamerError do
   it 'builds the correct error type based on the numeric code' do
     {
       1 => Lightstreamer::AuthenticationError,
@@ -61,19 +61,19 @@ describe Lightstreamer::Error do
       33 => Lightstreamer::InvalidProgressiveNumberError,
       60 => Lightstreamer::ClientVersionNotSupportedError
     }.each do |error_code, error_class|
-      expect(Lightstreamer::Error.build('', error_code)).to be_a(error_class)
+      expect(Lightstreamer::LightstreamerError.build('', error_code)).to be_a(error_class)
     end
   end
 
   it 'builds a metadata adapter error when the numeric code is negative' do
     expect(Lightstreamer::MetadataAdapterError).to receive(:new).with('message', -5)
 
-    Lightstreamer::Error.build 'message', '-5'
+    Lightstreamer::LightstreamerError.build 'message', '-5'
   end
 
   it 'builds a base error when the numeric code is unknown' do
-    expect(Lightstreamer::Error).to receive(:new).with('999: message')
+    expect(Lightstreamer::LightstreamerError).to receive(:new).with('999: message')
 
-    Lightstreamer::Error.build 'message', '999'
+    Lightstreamer::LightstreamerError.build 'message', '999'
   end
 end
