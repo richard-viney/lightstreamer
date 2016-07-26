@@ -35,16 +35,17 @@ module Lightstreamer
     # {#initialize}. Raises an {Error} subclass on failure.
     def connect
       return if @thread
-      @session_id = @error = nil
       @queue.clear
 
+      @connect_thread = Thread.current
+
       create_stream_thread
+      sleep
 
-      # Wait until the connection result is known
-      until @session_id || @error
-      end
+      return unless @error
 
-      raise @error if @error
+      @thread = nil
+      raise @error
     end
 
     # Returns whether or not this stream connection is connected.
@@ -56,12 +57,12 @@ module Lightstreamer
 
     # Disconnects this stream connection by shutting down the streaming thread.
     def disconnect
-      if @thread
-        @thread.exit
-        @thread.join
-      end
+      return unless @thread
 
-      @session_id = @control_address = @error = @thread = nil
+      @thread.exit
+      @thread.join
+
+      @thread = nil
     end
 
     # Reads the next line of streaming data. If the streaming thread is alive then this method blocks the calling thread
@@ -118,12 +119,20 @@ module Lightstreamer
         buffer.process data, &method(:process_stream_line)
       end
 
-      request.on_complete do |response|
-        @error = @header.error if @header
-        @error = RequestError.new(response.return_message, response.response_code) unless response.success?
-      end
-
+      request.on_complete(&method(:on_request_complete))
       request.run
+
+      wakeup_connect_thread
+    end
+
+    def on_request_complete(response)
+      @error = @header.error if @header
+      @error = RequestError.new(response.return_message, response.response_code) unless response.success?
+    end
+
+    def wakeup_connect_thread
+      @connect_thread.wakeup if @connect_thread
+      @connect_thread = nil
     end
 
     def process_stream_line(line)
@@ -137,8 +146,11 @@ module Lightstreamer
     def process_header_line(line)
       return if @header.process_header_line line
 
-      @control_address = @header['ControlAddress']
       @session_id = @header['SessionId']
+      @control_address = @header['ControlAddress']
+      @error = @header.error
+
+      wakeup_connect_thread
 
       @header = nil
     end
@@ -148,13 +160,9 @@ module Lightstreamer
         @loop = true
       elsif line =~ /^END/
         @error = SessionEndError.new line[4..-1]
-      elsif !ignore_line?(line)
+      elsif line !~ /^(PROBE|Preamble:.*)$/
         @queue.push line
       end
-    end
-
-    def ignore_line?(line)
-      line =~ /^(PROBE|Preamble:.*)$/
     end
   end
 end
