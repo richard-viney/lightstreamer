@@ -173,7 +173,7 @@ module Lightstreamer
       @request_error_message = message
       @request_error_code = code
 
-      if code != 0
+      if code.nonzero?
         super "#{code}: #{message}"
       else
         super message
