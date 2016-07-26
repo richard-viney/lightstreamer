@@ -7,7 +7,7 @@ module Lightstreamer
     # If there was an error in the header then this value will be set to the error instance that should be raised in
     # response.
     #
-    # @return [Error, nil]
+    # @return [LightstreamerError, nil]
     attr_reader :error
 
     def initialize

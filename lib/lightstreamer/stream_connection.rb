@@ -17,7 +17,7 @@ module Lightstreamer
     # If an error occurs on the stream thread that causes the stream to disconnect then the error will be stored in this
     # attribute.
     #
-    # @return [Error, nil]
+    # @return [LightstreamerError, nil]
     attr_reader :error
 
     # Establishes a new stream connection using the authentication details from the passed session.

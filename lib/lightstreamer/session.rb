@@ -26,7 +26,7 @@ module Lightstreamer
     # stored in this attribute. If the session is terminated as a result of calling {#disconnect} then the error will be
     # {SessionEndError}.
     #
-    # @return [Error, nil]
+    # @return [LightstreamerError, nil]
     attr_reader :error
 
     # Initializes this new Lightstreamer session with the passed options.

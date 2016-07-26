@@ -190,7 +190,7 @@ module Lightstreamer
     # @param [Fixnum] code The numeric error code that is used to determine which {LightstreamerError} subclass to
     #        instantiate.
     #
-    # @return [Error]
+    # @return [LightstreamerError]
     #
     # @private
     def self.build(message, code)
