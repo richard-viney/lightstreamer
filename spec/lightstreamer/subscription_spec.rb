@@ -26,23 +26,44 @@ describe Lightstreamer::Subscription do
     expect { subscription.clear_data_for_item :item3 }.to raise_error(ArgumentError)
   end
 
-  it 'calls multiple data callbacks when new data arrives' do
-    calls = []
+  it 'invokes callbacks when new data arrives' do
+    data_calls = []
+    overflow_calls = []
 
-    subscription.on_data { |*args| calls << args }
-    subscription.on_data { |*args| calls << args }
+    subscription.on_data { |*args| data_calls << args }
+    subscription.on_data { |*args| data_calls << args }
+    subscription.on_overflow { |*args| overflow_calls << args }
 
     expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2|c|")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2,OV5")).to be true
-    expect(subscription.process_stream_data("#{subscription.id},99,OV123")).to be true
-    expect(subscription.process_stream_data('0,3|d|e')).to be false
+    expect(subscription.process_stream_data("#{subscription.id},1,OV123")).to be true
+    expect(subscription.process_stream_data("#{subscription.id},3,OV1")).to be_falsey
+    expect(subscription.process_stream_data('0,3|d|e')).to be_falsey
 
-    expect(calls.count).to eq(4)
-    expect(calls[0]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
-    expect(calls[1]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
-    expect(calls[2]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
-    expect(calls[3]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
+    expect(data_calls.count).to eq(4)
+    expect(data_calls[0]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
+    expect(data_calls[1]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
+    expect(data_calls[2]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
+    expect(data_calls[3]).to eq([subscription, :item2, { field1: 'c' }, { field1: 'c' }])
+
+    expect(overflow_calls.count).to eq(2)
+    expect(overflow_calls[0]).to eq([subscription, :item2, 5])
+    expect(overflow_calls[1]).to eq([subscription, :item1, 123])
+  end
+
+  it 'clears callbacks' do
+    call_count = 0
+
+    subscription.on_data { call_count += 1 }
+    subscription.on_overflow { call_count += 1 }
+
+    subscription.clear_callbacks
+
+    expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
+    expect(subscription.process_stream_data("#{subscription.id},2,OV5")).to be true
+
+    expect(call_count).to eq(0)
   end
 
   it 'processes stream data' do

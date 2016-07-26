@@ -156,7 +156,7 @@ module Lightstreamer
     end
 
     def process_body_line(line)
-      if line == 'LOOP'
+      if line =~ /^LOOP/
         @loop = true
       elsif line =~ /^END/
         @error = SessionEndError.new line[4..-1]

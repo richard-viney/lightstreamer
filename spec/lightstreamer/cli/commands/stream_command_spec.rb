@@ -24,6 +24,7 @@ describe Lightstreamer::CLI::Main do
       .and_return(subscription)
 
     expect(subscription).to receive(:on_data)
+    expect(subscription).to receive(:on_overflow)
 
     expect(session).to receive(:connect)
     expect(session).to receive(:subscribe).with(subscription)
@@ -41,5 +42,12 @@ describe Lightstreamer::CLI::Main do
     expect(queue).to receive(:push).with('item - field1: 1, field2: 2')
 
     cli.send(:on_data, subscription, 'item', {}, field1: '1', field2: '2')
+  end
+
+  it 'formats overflow notifcations correctly' do
+    cli.instance_variable_set :@queue, queue
+    expect(queue).to receive(:push).with('Overflow of size 3 on item item')
+
+    cli.send(:on_overflow, subscription, 'item', 3)
   end
 end

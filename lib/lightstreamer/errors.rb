@@ -134,7 +134,7 @@ module Lightstreamer
     #
     # - `<=0` - The session was closed through a `destroy` request and this custom code was specified.
     # - `31` - The session was closed through a `destroy` request.
-    # - `32` - The session was closed by the administrator through JMX.
+    # - `32` - The session was closed by an administrator through JMX.
     # - `33`, `34` - An unexpected error occurred on the server.
     # - `35` - Another session was opened on the metadata adapter and the metadata adpater only supports one session.
     # - `40` - A manual rebind to the session was done by another client.

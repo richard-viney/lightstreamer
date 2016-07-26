@@ -51,9 +51,10 @@ describe Lightstreamer::StreamConnection do
     expect(create_request).to receive(:on_body) { |&block| on_body_block = block }
     expect(create_request).to receive(:on_complete)
     expect(create_request).to receive(:run) do
+      stream_thread = Thread.current
+
       on_body_block.call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n"
 
-      stream_thread = Thread.current
       sleep
     end
 

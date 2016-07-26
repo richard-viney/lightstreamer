@@ -4,9 +4,9 @@
 
 - Added explicit timeouts to all HTTP requests
 - Unhandled exceptions in subscription data callbacks are no longer automatically rescued
-- Overflow messages are now silently ignored if they occur
 - Renamed `Lightstreamer::Subscription#add_data_callback` to `Lightstreamer::Subscription#on_data`
-- Removed `Lightstreamer::Subscription#remove_data_callback`
+- Replaced `Lightstreamer::Subscription#remove_data_callback` with `Lightstreamer::Subscription#clear_callbacks`
+- Overflow messages can now be processed by the application using `Lightstreamer::Subscription#on_callback`
 - Improved documentation
 
 ### 0.4 — July 25, 2016

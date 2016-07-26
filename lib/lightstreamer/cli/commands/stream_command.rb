@@ -13,7 +13,7 @@ module Lightstreamer
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
       option :mode, enum: %w(distinct merge), default: :merge, desc: 'The operation mode'
       option :selector, desc: 'The selector for table items'
-      option :maximum_update_frequency, type: :numeric, desc: 'The maximum number of updates per second for each item'
+      option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'
 
       def stream
         session = create_session
@@ -43,6 +43,7 @@ module Lightstreamer
         subscription = Lightstreamer::Subscription.new subscription_options
 
         subscription.on_data(&method(:on_data))
+        subscription.on_overflow(&method(:on_overflow))
 
         subscription
       end
@@ -56,6 +57,10 @@ module Lightstreamer
 
       def on_data(_subscription, item_name, _item_data, new_values)
         @queue.push "#{item_name} - #{new_values.map { |key, value| "#{key}: #{value}" }.join ', '}"
+      end
+
+      def on_overflow(_subscription, item_name, overflow_size)
+        @queue.push "Overflow of size #{overflow_size} on item #{item_name}"
       end
     end
   end

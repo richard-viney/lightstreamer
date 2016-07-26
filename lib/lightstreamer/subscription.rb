@@ -30,15 +30,16 @@ module Lightstreamer
     # @return [String, nil]
     attr_reader :adapter
 
-    # The selector for table items, or `nil` to specify no selector.
+    # The selector for table items.
     #
     # @return [String, nil]
     attr_reader :selector
 
     # The maximum number of updates this subscription should receive per second. If this is set to zero, which is the
-    # default, then there is no limit on the update frequency.
+    # default, then there is no limit on the update frequency. If set to `:unfiltered` then unfiltered streaming will be
+    # used for this subscription and it is possible for overflows to occur (see {#on_overflow}).
     #
-    # @return [Float]
+    # @return [Float, :unfiltered]
     attr_reader :maximum_update_frequency
 
     # Initializes a new Lightstreamer subscription with the specified options. This can then be passed to
@@ -51,8 +52,10 @@ module Lightstreamer
     # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
     #                 should be used. If `nil` then the default data adapter will be used.
     # @option options [String] :selector The selector for table items. Optional.
-    # @option options [Float] :maximum_update_frequency The maximum number of updates this subscription should receive
-    #                 per second. Defaults to zero which means there is no limit on the update frequency.
+    # @option options [Float, :unfiltered] :maximum_update_frequency The maximum number of updates this subscription
+    #                 should receive per second. Defaults to zero which means there is no limit on the update frequency.
+    #                 If set to `:unfiltered` then unfiltered streaming will be used for this subscription and it is
+    #                 possible for overflows to occur (see {#on_overflow}).
     def initialize(options)
       @id = self.class.next_id
 
@@ -64,9 +67,9 @@ module Lightstreamer
       @maximum_update_frequency = options[:maximum_update_frequency] || 0.0
 
       @data_mutex = Mutex.new
-      clear_data
 
-      @on_data_callbacks = []
+      clear_data
+      clear_callbacks
     end
 
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
@@ -96,7 +99,27 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when new data arrives.
     def on_data(&callback)
-      @data_mutex.synchronize { @on_data_callbacks << callback }
+      @data_mutex.synchronize do
+        @callbacks[:on_data] << callback
+      end
+    end
+
+    # Adds the passed block to the list of callbacks that will be run when the server reports an overflow for this
+    # subscription. The block will be called on a worker thread and so the code that is run by the block must be
+    # thread-safe. The arguments passed to the block are `|subscription, item_name, overflow_size|`.
+    #
+    # @param [Proc] callback The callback that is to be run when an overflow is reported for this subscription.
+    def on_overflow(&callback)
+      @data_mutex.synchronize do
+        @callbacks[:on_overflow] << callback
+      end
+    end
+
+    # Removes all `on_data` and `on_overflow` callbacks present on this subscription.
+    def clear_callbacks
+      @data_mutex.synchronize do
+        @callbacks = { on_data: [], on_overflow: [] }
+      end
     end
 
     # Returns a copy of the current data of one of this subscription's items.
@@ -109,7 +132,9 @@ module Lightstreamer
       index = @items.index item_name
       raise ArgumentError, 'Unrecognized item name' unless index
 
-      @data_mutex.synchronize { @data[index].dup }
+      @data_mutex.synchronize do
+        @data[index].dup
+      end
     end
 
     # Processes a line of stream data if it is relevant to this subscription. This method is thread-safe and is intended
@@ -122,21 +147,7 @@ module Lightstreamer
     #
     # @private
     def process_stream_data(line)
-      return true if overflow_message? line
-
-      item_index, new_values = parse_stream_data line
-      return false unless item_index
-
-      @data_mutex.synchronize do
-        data = @data[item_index]
-
-        data << new_values if mode == :distinct
-        data.merge!(new_values) if mode == :merge
-
-        run_on_data_callbacks @items[item_index], data, new_values
-      end
-
-      true
+      process_update_message(line) || process_overflow_message(line)
     end
 
     # Returns the next unique subscription ID.
@@ -151,59 +162,39 @@ module Lightstreamer
 
     private
 
-    # Attempts to parse a line of stream data. If parsing is successful then the first return value is the item index,
-    # and the second is a hash of the values contained in the stream data.
-    def parse_stream_data(line)
-      match = line.match stream_data_regexp
-      return unless match
+    def process_update_message(line)
+      update_message = UpdateMessage.parse line, id, items, fields
+      return unless update_message
 
-      item_index = match.captures[0].to_i - 1
-      return unless item_index < @items.size
-
-      [item_index, parse_values(match.captures[1..-1])]
-    end
-
-    # Returns whether the specified line of stream data is an overflow message for this subscription. Currently nothing
-    # is done with overflow messages if they occur.
-    def overflow_message?(line)
-      line.match Regexp.new("^#{id},\\d+,OV\\d+$")
-    end
-
-    # Returns the regular expression that will match a single line of data in the incoming stream that is relevant to
-    # this subscription. The ID at the beginning must match, as well as the number of fields.
-    def stream_data_regexp
-      Regexp.new "^#{id},(\\d+)#{'\|(.*)' * fields.size}"
-    end
-
-    # Parses an array of values from an incoming line of stream data into a hash where the keys are the field names
-    # defined for this subscription.
-    def parse_values(values)
-      hash = {}
-
-      values.each_with_index do |value, index|
-        next if value == ''
-
-        hash[fields[index]] = parse_raw_field_value value
+      @data_mutex.synchronize do
+        process_new_values update_message.item_index, update_message.values
       end
 
-      hash
+      true
     end
 
-    # Parses a raw field value according to to the Lightstreamer specification.
-    def parse_raw_field_value(value)
-      return '' if value == '$'
-      return nil if value == '#'
+    def process_new_values(item_index, new_values)
+      data = @data[item_index]
 
-      value = value[1..-1] if value =~ /^(\$|#)/
+      data << new_values if mode == :distinct
+      data.merge!(new_values) if mode == :merge
 
-      UTF16.decode_escape_sequences value
-    end
-
-    # Runs all of this subscription's on_data callbacks with the specified arguments.
-    def run_on_data_callbacks(item_name, item_data, new_values)
-      @on_data_callbacks.each do |callback|
-        callback.call self, item_name, item_data, new_values
+      @callbacks[:on_data].each do |callback|
+        callback.call self, @items[item_index], data, new_values
       end
+    end
+
+    def process_overflow_message(line)
+      overflow_message = OverflowMessage.parse line, id, items
+      return unless overflow_message
+
+      @data_mutex.synchronize do
+        @callbacks[:on_overflow].each do |callback|
+          callback.call self, @items[overflow_message.item_index], overflow_message.overflow_size
+        end
+      end
+
+      true
     end
   end
 end
