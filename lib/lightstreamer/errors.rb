@@ -10,7 +10,7 @@ module Lightstreamer
   class UnknownAdapterSetError < LightstreamerError
   end
 
-  # This error is raise when trying to bind to a session that was initialized with a different and incompatible
+  # This error is raised when trying to bind to a session that was initialized with a different and incompatible
   # communication protocol.
   class IncompatibleSessionError < LightstreamerError
   end
