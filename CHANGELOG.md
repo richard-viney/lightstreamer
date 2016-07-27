@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.7 — Unreleased
+
+- 
+
 ### 0.6 — July 26, 2016
 
 - Switched to the `excon` HTTP library
