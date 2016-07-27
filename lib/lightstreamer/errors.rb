@@ -197,7 +197,7 @@ module Lightstreamer
       code = code.to_i
 
       if API_ERROR_CODE_TO_CLASS.key? code
-        API_ERROR_CODE_TO_CLASS[code].new
+        API_ERROR_CODE_TO_CLASS[code].new ''
       elsif code <= 0
         MetadataAdapterError.new message, code
       else

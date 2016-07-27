@@ -8,7 +8,7 @@
 
 - Improved handling of `:distinct` subscriptions
 - Subscriptions can now request an unfiltered stream and handle any overflow messages from the server using
-  `Lightstreamer::Subscription#on_callback`
+  `Lightstreamer::Subscription#on_overflow`
 - Added a connection timeout to all requests
 - Unhandled exceptions in subscription data callbacks are no longer automatically rescued
 - Improved API documentation
