@@ -126,7 +126,7 @@ module Lightstreamer
 
     def on_request_complete(response)
       @error = @header.error if @header
-      @error = RequestError.new(response.return_message, response.response_code) unless response.success?
+      @error = Errors::RequestError.new(response.return_message, response.response_code) unless response.success?
     end
 
     def signal_connect_result_ready
@@ -157,7 +157,7 @@ module Lightstreamer
       if line =~ /^LOOP/
         @loop = true
       elsif line =~ /^END/
-        @error = SessionEndError.new line[4..-1]
+        @error = Errors::SessionEndError.new line[4..-1]
       elsif line !~ /^(PROBE|Preamble:.*)$/
         @queue.push line
       end

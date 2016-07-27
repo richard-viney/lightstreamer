@@ -2,7 +2,7 @@
 
 ### 0.6 — Unreleased
 
-- 
+- Moved all subclasses of `Lightstreamer::LightstreamerError` into the `Lightstreamer::Errors` module
 
 ### 0.5 — July 26, 2016
 

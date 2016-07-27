@@ -26,7 +26,7 @@ describe Lightstreamer::ControlConnection do
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("ERROR\r\n1\r\nError message\r\n")
 
-    expect { control_connection.execute :test }.to raise_error(Lightstreamer::AuthenticationError)
+    expect { control_connection.execute :test }.to raise_error(Lightstreamer::Errors::AuthenticationError)
   end
 
   it 'handles a sync error response' do
@@ -39,7 +39,7 @@ describe Lightstreamer::ControlConnection do
     expect(response).to receive(:success?).and_return(true)
     expect(response).to receive(:body).and_return("SYNC ERROR\r\n")
 
-    expect { control_connection.execute :test }.to raise_error(Lightstreamer::SyncError)
+    expect { control_connection.execute :test }.to raise_error(Lightstreamer::Errors::SyncError)
   end
 
   it 'handles a request error' do
@@ -49,7 +49,7 @@ describe Lightstreamer::ControlConnection do
     expect(response).to receive(:response_code).and_return(404)
 
     expect { control_connection.execute :operation }.to raise_error do |error|
-      expect(error).to be_a(Lightstreamer::RequestError)
+      expect(error).to be_a(Lightstreamer::Errors::RequestError)
       expect(error.request_error_message).to eq('Error message')
       expect(error.request_error_code).to eq(404)
     end

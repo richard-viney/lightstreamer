@@ -21,7 +21,7 @@ module Lightstreamer
     def execute(operation, options = {})
       result = execute_post_request build_payload(operation, options)
 
-      raise SyncError if result.first == 'SYNC ERROR'
+      raise Errors::SyncError if result.first == 'SYNC ERROR'
       raise LightstreamerError.build(result[2], result[1]) if result.first != 'OK'
     end
 
@@ -61,7 +61,7 @@ module Lightstreamer
     def execute_post_request(payload)
       response = Typhoeus.post @control_url, body: payload, timeout: 15
 
-      raise RequestError.new(response.return_message, response.response_code) unless response.success?
+      raise Errors::RequestError.new(response.return_message, response.response_code) unless response.success?
 
       response.body.split("\n").map(&:strip)
     end

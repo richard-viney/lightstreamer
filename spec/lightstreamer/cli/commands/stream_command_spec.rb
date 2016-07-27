@@ -28,13 +28,13 @@ describe Lightstreamer::CLI::Main do
 
     expect(session).to receive(:connect)
     expect(session).to receive(:subscribe).with(subscription)
-    expect(session).to receive(:error).twice.and_return(Lightstreamer::SessionEndError.new(31))
+    expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
 
     expect(Queue).to receive(:new).and_return(queue)
     expect(queue).to receive(:empty?).and_return(false)
     expect(queue).to receive(:pop).once.and_return('Test')
 
-    expect { cli.stream }.to output("Test\n").to_stdout.and raise_error(Lightstreamer::SessionEndError)
+    expect { cli.stream }.to output("Test\n").to_stdout.and raise_error(Lightstreamer::Errors::SessionEndError)
   end
 
   it 'formats new data correctly' do

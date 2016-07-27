@@ -58,12 +58,12 @@ module Lightstreamer
     end
 
     def process_end
-      @error = SessionEndError.new @lines[1]
+      @error = Errors::SessionEndError.new @lines[1]
       true
     end
 
     def process_sync_error
-      @error = SyncError.new
+      @error = Errors::SyncError.new
       false
     end
 

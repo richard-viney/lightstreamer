@@ -104,7 +104,7 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')
     expect(stream_connection.read_line).to eq('three')
-    expect(stream_connection.error).to be_a(Lightstreamer::SessionEndError)
+    expect(stream_connection.error).to be_a(Lightstreamer::Errors::SessionEndError)
 
     loop { break unless stream_connection.connected? }
   end
@@ -121,7 +121,7 @@ describe Lightstreamer::StreamConnection do
     expect(create_response).to receive(:response_code).and_return(404)
 
     expect { Lightstreamer::StreamConnection.new(session).connect }.to raise_error do |error|
-      expect(error).to be_a(Lightstreamer::RequestError)
+      expect(error).to be_a(Lightstreamer::Errors::RequestError)
       expect(error.request_error_message).to eq('Error message')
       expect(error.request_error_code).to eq(404)
     end

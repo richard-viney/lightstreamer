@@ -44,7 +44,7 @@ describe Lightstreamer::Session do
 
     it 'handles when the stream connection dies' do
       expect(stream_connection).to receive(:read_line).and_return(nil)
-      expect(stream_connection).to receive(:error).and_return(Lightstreamer::SessionEndError.new(31))
+      expect(stream_connection).to receive(:error).and_return(Lightstreamer::Errors::SessionEndError.new(31))
 
       session.connect
 
@@ -52,15 +52,15 @@ describe Lightstreamer::Session do
       processing_thread.join if processing_thread
 
       expect(session.connected?).to be false
-      expect(session.error).to be_a(Lightstreamer::SessionEndError)
+      expect(session.error).to be_a(Lightstreamer::Errors::SessionEndError)
     end
   end
 
   it 'handles when the stream connection fails to connect' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
-    expect(stream_connection).to receive(:connect).and_raise(Lightstreamer::AuthenticationError)
+    expect(stream_connection).to receive(:connect).and_raise(Lightstreamer::Errors::AuthenticationError)
 
-    expect { session.connect }.to raise_error(Lightstreamer::AuthenticationError)
+    expect { session.connect }.to raise_error(Lightstreamer::Errors::AuthenticationError)
   end
 
   it 'rebinds the stream connection' do

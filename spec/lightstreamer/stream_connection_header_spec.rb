@@ -16,27 +16,27 @@ describe Lightstreamer::StreamConnectionHeader do
     expect(header.process_header_line('1')).to be true
     expect(header.process_header_line('')).to be true
 
-    expect(header.error).to be_a(Lightstreamer::AuthenticationError)
+    expect(header.error).to be_a(Lightstreamer::Errors::AuthenticationError)
   end
 
   it 'processes an end header' do
     expect(header.process_header_line('END')).to be true
 
-    expect(header.error).to be_a(Lightstreamer::SessionEndError)
+    expect(header.error).to be_a(Lightstreamer::Errors::SessionEndError)
   end
 
   it 'processes an end header with a cause code' do
     expect(header.process_header_line('END')).to be true
     expect(header.process_header_line('31')).to be true
 
-    expect(header.error).to be_a(Lightstreamer::SessionEndError)
+    expect(header.error).to be_a(Lightstreamer::Errors::SessionEndError)
     expect(header.error.cause_code).to eq(31)
   end
 
   it 'processes a sync error' do
     expect(header.process_header_line('SYNC ERROR')).to be false
 
-    expect(header.error).to be_a(Lightstreamer::SyncError)
+    expect(header.error).to be_a(Lightstreamer::Errors::SyncError)
   end
 
   it 'processes an unrecognized error' do
