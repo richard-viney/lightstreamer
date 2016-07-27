@@ -19,6 +19,8 @@ module Lightstreamer
         session = create_session
         session.connect
 
+        puts "Session ID: #{session.session_id}"
+
         @queue = Queue.new
 
         session.subscribe create_subscription

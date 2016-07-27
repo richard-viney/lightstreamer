@@ -13,8 +13,8 @@ describe Lightstreamer::Session do
     before do
       expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
       expect(stream_connection).to receive(:connect)
-      expect(stream_connection).to receive(:control_address).and_return('test2.com')
-      expect(stream_connection).to receive(:session_id).and_return('session')
+      allow(stream_connection).to receive(:control_address).and_return('test2.com')
+      allow(stream_connection).to receive(:session_id).and_return('session')
     end
 
     it 'connects to a stream, processes some data, then disconnects' do
@@ -38,6 +38,7 @@ describe Lightstreamer::Session do
 
       expect do
         session.connect
+        expect(session.session_id).to eq('session')
         session.disconnect
       end.to output("Lightstreamer: unprocessed stream data 'invalid data'\n").to_stderr
     end

@@ -2,7 +2,8 @@
 
 ### 0.7 — Unreleased
 
-- 
+- Added `Lightstreamer::Session#session_id` to query the session ID
+- The command-line client now prints the session ID following successful connection
 
 ### 0.6 — July 26, 2016
 

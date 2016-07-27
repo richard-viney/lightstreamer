@@ -68,6 +68,13 @@ module Lightstreamer
       !@stream_connection.nil?
     end
 
+    # Returns the ID of the currently active Lightstreamer session, or `nil` if there is no active session.
+    #
+    # @return [String, nil]
+    def session_id
+      @stream_connection && @stream_connection.session_id
+    end
+
     # Disconnects this session and terminates the session on the server. All worker threads are exited.
     def disconnect
       @control_connection.execute :destroy if @control_connection
@@ -119,7 +126,8 @@ module Lightstreamer
       @subscriptions_mutex.synchronize { @subscriptions.include? subscription }
     end
 
-    # Unsubscribes this Lightstreamer session from the specified subscription.
+    # Unsubscribes this Lightstreamer session from the specified subscription. If an error occurs then a
+    # {LightstreamerError} subclass will be raised.
     #
     # @param [Subscription] subscription The existing subscription to unsubscribe from.
     def unsubscribe(subscription)

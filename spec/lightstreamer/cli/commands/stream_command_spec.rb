@@ -27,6 +27,7 @@ describe Lightstreamer::CLI::Main do
     expect(subscription).to receive(:on_overflow)
 
     expect(session).to receive(:connect)
+    expect(session).to receive(:session_id).and_return('A')
     expect(session).to receive(:subscribe).with(subscription)
     expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
 
@@ -34,7 +35,9 @@ describe Lightstreamer::CLI::Main do
     expect(queue).to receive(:empty?).and_return(false)
     expect(queue).to receive(:pop).once.and_return('Test')
 
-    expect { cli.stream }.to output("Test\n").to_stdout.and raise_error(Lightstreamer::Errors::SessionEndError)
+    expect do
+      cli.stream
+    end.to output("Session ID: A\nTest\n").to_stdout.and raise_error(Lightstreamer::Errors::SessionEndError)
   end
 
   it 'formats new data correctly' do
