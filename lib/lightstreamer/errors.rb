@@ -156,32 +156,8 @@ module Lightstreamer
       end
     end
 
-    # This error is raised when an HTTP request error occurs.
-    class RequestError < LightstreamerError
-      # The description of the request error that occurred.
-      #
-      # @return [String]
-      attr_reader :request_error_message
-
-      # The HTTP code that was returned, or zero if unknown.
-      #
-      # @return [Fixnum]
-      attr_reader :request_error_code
-
-      # Initializes this request error with a message and an HTTP code.
-      #
-      # @param [String] message The error description.
-      # @param [Fixnum] code The HTTP code for the request failure, or zero if unknown.
-      def initialize(message, code)
-        @request_error_message = message
-        @request_error_code = code
-
-        if code.nonzero?
-          super "#{code}: #{message}"
-        else
-          super message
-        end
-      end
+    # This error is raised when an HTTP connection error occurs.
+    class ConnectionError < LightstreamerError
     end
   end
 

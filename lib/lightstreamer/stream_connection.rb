@@ -85,11 +85,11 @@ module Lightstreamer
       @thread = Thread.new do
         Thread.current.abort_on_exception = true
 
-        connect_stream_and_process_data stream_create_post_request
+        create_new_stream
 
         while @loop
           @loop = false
-          connect_stream_and_process_data stream_bind_post_request
+          bind_to_existing_stream
         end
 
         @thread = nil
@@ -97,36 +97,32 @@ module Lightstreamer
       end
     end
 
-    def stream_create_post_request
+    def create_new_stream
       params = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: @session.username,
                  LS_password: @session.password }
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
-      Typhoeus::Request.new @stream_create_url, method: :post, connecttimeout: 15, params: params
-    end
-
-    def stream_bind_post_request
-      Typhoeus::Request.new @stream_bind_url, method: :post, connecttimeout: 15, params: { LS_session: @session_id }
-    end
-
-    def connect_stream_and_process_data(request)
-      @header = StreamConnectionHeader.new
-
-      buffer = LineBuffer.new
-      request.on_body do |data|
-        buffer.process data, &method(:process_stream_line)
-      end
-
-      request.on_complete(&method(:on_request_complete))
-      request.run
+      execute_stream_post_request @stream_create_url, connect_timeout: 15, query: params
 
       signal_connect_result_ready
     end
 
-    def on_request_complete(response)
-      @error = @header.error if @header
-      @error = Errors::RequestError.new(response.return_message, response.response_code) unless response.success?
+    def bind_to_existing_stream
+      execute_stream_post_request @stream_bind_url, connect_timeout: 15, query: { LS_session: @session_id }
+    end
+
+    def execute_stream_post_request(url, options)
+      @header = StreamConnectionHeader.new
+
+      buffer = LineBuffer.new
+      options[:response_block] = lambda do |data, _remaining_bytes, _total_bytes|
+        buffer.process data, &method(:process_stream_line)
+      end
+
+      Excon.post url, options
+    rescue Excon::Error => error
+      @error = Errors::ConnectionError.new error.message
     end
 
     def signal_connect_result_ready
@@ -142,11 +138,13 @@ module Lightstreamer
     end
 
     def process_header_line(line)
-      return if @header.process_header_line line
+      header_incomplete = @header.process_line line
 
       @session_id = @header['SessionId']
       @control_address = @header['ControlAddress']
       @error = @header.error
+
+      return if header_incomplete
 
       signal_connect_result_ready
 

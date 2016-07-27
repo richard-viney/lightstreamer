@@ -2,7 +2,9 @@
 
 ### 0.6 — Unreleased
 
+- Switched to the `excon` HTTP library
 - Moved all subclasses of `Lightstreamer::LightstreamerError` into the `Lightstreamer::Errors` module
+- Replaced `Lightstreamer::Errors::RequestError` with `Lightstreamer::Errors::ConnectionError`
 
 ### 0.5 — July 26, 2016
 

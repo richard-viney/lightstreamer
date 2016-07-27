@@ -21,7 +21,7 @@ module Lightstreamer
     # @param [String] line The line of header data to process.
     #
     # @return [Boolean] Whether the header is still incomplete and requires further data.
-    def process_header_line(line)
+    def process_line(line)
       @lines << line
 
       return process_success if @lines.first == 'OK'

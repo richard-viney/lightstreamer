@@ -15,24 +15,6 @@ describe Lightstreamer::Errors::SessionEndError do
   end
 end
 
-describe Lightstreamer::Errors::RequestError do
-  it 'constructs from an error message and error code' do
-    error = Lightstreamer::Errors::RequestError.new 'message', 404
-
-    expect(error.request_error_message).to eq('message')
-    expect(error.request_error_code).to eq(404)
-    expect(error.message).to eq('404: message')
-  end
-
-  it 'constructs from an error message' do
-    error = Lightstreamer::Errors::RequestError.new 'message', 0
-
-    expect(error.request_error_message).to eq('message')
-    expect(error.request_error_code).to eq(0)
-    expect(error.message).to eq('message')
-  end
-end
-
 describe Lightstreamer::LightstreamerError do
   it 'builds the correct error type based on the numeric code' do
     {

@@ -56,14 +56,14 @@ module Lightstreamer
       raise ArgumentError, 'Unsupported mode' unless [:distinct, :merge].include? options[:mode]
     end
 
-    # Executes a POST request to the control address with the specified payload. Raises {RequestError} if the HTTP
+    # Executes a POST request to the control address with the specified payload. Raises {ConnectionError} if the HTTP
     # request fails. Returns the response body split into individual lines.
     def execute_post_request(payload)
-      response = Typhoeus.post @control_url, body: payload, timeout: 15
-
-      raise Errors::RequestError.new(response.return_message, response.response_code) unless response.success?
+      response = Excon.post @control_url, body: URI.encode_www_form(payload), connect_timeout: 15
 
       response.body.split("\n").map(&:strip)
+    rescue Excon::Error => error
+      raise Errors::ConnectionError, error.message
     end
 
     # Constructs the payload for a Lightstreamer control request based on the given options hash. See {#execute} for

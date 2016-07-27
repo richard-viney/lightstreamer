@@ -1,5 +1,5 @@
+require 'excon'
 require 'thor'
-require 'typhoeus'
 require 'uri'
 
 require 'lightstreamer/cli/main'
