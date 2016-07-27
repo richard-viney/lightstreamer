@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.6 — Unreleased
+### 0.6 — July 26, 2016
 
 - Switched to the `excon` HTTP library
 - Moved all subclasses of `Lightstreamer::LightstreamerError` into the `Lightstreamer::Errors` module
