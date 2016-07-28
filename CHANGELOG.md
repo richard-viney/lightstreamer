@@ -5,7 +5,7 @@
 - Added `Lightstreamer::Session#session_id` to query the session ID
 - The command-line client now prints the session ID following successful connection
 
-### 0.6 — July 26, 2016
+### 0.6 — July 27, 2016
 
 - Switched to the `excon` HTTP library
 - Moved all subclasses of `Lightstreamer::LightstreamerError` into the `Lightstreamer::Errors` module
