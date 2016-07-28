@@ -21,6 +21,8 @@ describe Lightstreamer::StreamConnection do
     stream_connection.connect
 
     expect(stream_connection.connected?).to be true
+    expect(stream_connection.session_id).to eq('A')
+    expect(stream_connection.control_address).to eq('http://test.com')
 
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')
@@ -35,10 +37,10 @@ describe Lightstreamer::StreamConnection do
 
     expect(Excon).to receive(:post).with(*create_args) do |_url, params|
       stream_thread = Thread.current
-      params[:response_block].call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\nLOOP\r\n", nil, nil
+      params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\none\r\ntwo\r\nLOOP\r\n", nil, nil
     end
 
-    bind_args = ['http://test.com/lightstreamer/bind_session.txt',
+    bind_args = ['http://a.com/lightstreamer/bind_session.txt',
                  hash_including(query: { LS_session: 'A' }, connect_timeout: 15)]
     expect(Excon).to receive(:post).with(*bind_args) do |_url, params|
       params[:response_block].call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n", nil, nil
@@ -49,6 +51,7 @@ describe Lightstreamer::StreamConnection do
     stream_connection.connect
 
     expect(stream_connection.connected?).to be true
+    expect(stream_connection.control_address).to eq('http://a.com')
 
     expect(stream_connection.read_line).to eq('one')
     expect(stream_connection.read_line).to eq('two')

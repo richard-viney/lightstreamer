@@ -2,6 +2,8 @@
 
 ### 0.7 — Unreleased
 
+- Stream connection bind requests are now sent to the custom control address if one was specified in the stream
+  connection header
 - Added `Lightstreamer::Session#session_id` to query the session ID
 - The command-line client now prints the session ID following successful connection
 

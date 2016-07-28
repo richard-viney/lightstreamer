@@ -9,7 +9,7 @@ module Lightstreamer
     # @return [String, nil]
     attr_reader :session_id
 
-    # The control address returned from the server when this stream connection was initiated.
+    # The control address to use for this stream connection.
     #
     # @return [String, nil]
     attr_reader :control_address
@@ -26,9 +26,6 @@ module Lightstreamer
     def initialize(session)
       @session = session
       @queue = Queue.new
-
-      @stream_create_url = URI.join(session.server_url, '/lightstreamer/create_session.txt').to_s
-      @stream_bind_url = URI.join(session.server_url, '/lightstreamer/bind_session.txt').to_s
 
       @connect_result_mutex = Mutex.new
       @connect_result_condition_variable = ConditionVariable.new
@@ -103,13 +100,16 @@ module Lightstreamer
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
-      execute_stream_post_request @stream_create_url, connect_timeout: 15, query: params
+      url = URI.join(@session.server_url, '/lightstreamer/create_session.txt').to_s
+      execute_stream_post_request url, connect_timeout: 15, query: params
 
       signal_connect_result_ready
     end
 
     def bind_to_existing_stream
-      execute_stream_post_request @stream_bind_url, connect_timeout: 15, query: { LS_session: @session_id }
+      url = URI.join(control_address, '/lightstreamer/bind_session.txt').to_s
+
+      execute_stream_post_request url, connect_timeout: 15, query: { LS_session: @session_id }
     end
 
     def execute_stream_post_request(url, options)
@@ -141,7 +141,13 @@ module Lightstreamer
       header_incomplete = @header.process_line line
 
       @session_id = @header['SessionId']
-      @control_address = @header['ControlAddress']
+
+      # Set the control address and ensure it has a schema
+      @control_address = @header['ControlAddress'] || @session.server_url
+      unless @control_address.start_with? 'http'
+        @control_address = "#{URI(@session.server_url).scheme}://#{@control_address}"
+      end
+
       @error = @header.error
 
       return if header_incomplete

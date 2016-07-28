@@ -13,7 +13,7 @@ describe Lightstreamer::Session do
     before do
       expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
       expect(stream_connection).to receive(:connect)
-      allow(stream_connection).to receive(:control_address).and_return('test2.com')
+      allow(stream_connection).to receive(:control_address).and_return('http://test2.com')
       allow(stream_connection).to receive(:session_id).and_return('session')
     end
 

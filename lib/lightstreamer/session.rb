@@ -146,14 +146,7 @@ module Lightstreamer
     end
 
     def create_control_connection
-      control_address = @stream_connection.control_address || server_url
-
-      # If the control address doesn't have a schema then use the same schema as the server URL
-      unless control_address.start_with? 'http'
-        control_address = "#{URI(server_url).scheme}://#{control_address}"
-      end
-
-      @control_connection = ControlConnection.new @stream_connection.session_id, control_address
+      @control_connection = ControlConnection.new @stream_connection.session_id, @stream_connection.control_address
     end
 
     # Starts the processing thread that reads and processes incoming data from the stream connection.
