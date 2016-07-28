@@ -43,7 +43,7 @@ describe Lightstreamer::StreamConnection do
     bind_args = ['http://a.com/lightstreamer/bind_session.txt',
                  hash_including(query: { LS_session: 'A' }, connect_timeout: 15)]
     expect(Excon).to receive(:post).with(*bind_args) do |_url, params|
-      params[:response_block].call "OK\r\nSessionId:A\r\n\r\nthree\r\nfour\r\n", nil, nil
+      params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\nthree\r\nfour\r\n", nil, nil
       sleep
     end
 
