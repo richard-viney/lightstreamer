@@ -96,7 +96,7 @@ module Lightstreamer
 
     def create_new_stream
       params = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: @session.username,
-                 LS_password: @session.password }
+                 LS_password: @session.password, LS_report_info: true }
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
@@ -109,7 +109,7 @@ module Lightstreamer
     def bind_to_existing_stream
       url = URI.join(control_address, '/lightstreamer/bind_session.txt').to_s
 
-      execute_stream_post_request url, connect_timeout: 15, query: { LS_session: @session_id }
+      execute_stream_post_request url, connect_timeout: 15, query: { LS_session: @session_id, LS_report_info: true }
     end
 
     def execute_stream_post_request(url, options)
