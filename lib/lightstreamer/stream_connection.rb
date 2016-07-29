@@ -115,7 +115,7 @@ module Lightstreamer
     def execute_stream_post_request(url, options)
       @header = StreamConnectionHeader.new
 
-      buffer = LineBuffer.new
+      buffer = StreamBuffer.new
       options[:response_block] = lambda do |data, _remaining_bytes, _total_bytes|
         buffer.process data, &method(:process_stream_line)
       end

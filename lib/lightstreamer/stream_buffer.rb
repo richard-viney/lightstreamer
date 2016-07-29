@@ -3,7 +3,7 @@ module Lightstreamer
   # as they become complete.
   #
   # @private
-  class LineBuffer
+  class StreamBuffer
     def initialize
       @buffer = ''
     end
