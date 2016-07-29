@@ -47,6 +47,18 @@ describe Lightstreamer::Subscription do
     subscription.unsilence
   end
 
+  it 'updates the maximum update frequency' do
+    subscription.instance_variable_set :@active, true
+    expect(session).to receive(:control_request).with(:reconf, LS_table: subscription.id, LS_requested_max_frequency: 2)
+    subscription.maximum_update_frequency = 2
+    expect(subscription.maximum_update_frequency).to eq(2)
+
+    expect(session).to receive(:control_request).with(:reconf, LS_table: subscription.id,
+                                                               LS_requested_max_frequency: :unfiltered)
+    subscription.maximum_update_frequency = 'unfiltered'
+    expect(subscription.maximum_update_frequency).to eq(:unfiltered)
+  end
+
   it 'invokes callbacks when new data arrives' do
     data_calls = []
     overflow_calls = []

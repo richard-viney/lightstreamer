@@ -56,7 +56,7 @@ module Lightstreamer
       @mode = options.fetch(:mode).to_sym
       @adapter = options[:adapter]
       @selector = options[:selector]
-      @maximum_update_frequency = options[:maximum_update_frequency] || 0.0
+      @maximum_update_frequency = sanitize_frequency options[:maximum_update_frequency]
 
       @data_mutex = Mutex.new
 
@@ -103,6 +103,18 @@ module Lightstreamer
     def stop
       session.control_request :delete, LS_table: id if @active
       @active = false
+    end
+
+    # Sets this subscription's maximum update frequency. This can be done while a subscription is streaming data in
+    # order to change its update frequency limit, but an actively streaming subscription cannot switch between filtered
+    # and unfiltered dispatching, and {TableModificationNotAllowedError} will be raised if this is attempted.
+    #
+    # @param [Float, :unfiltered] new_frequency The new maximum update frequency. See {#maximum_update_frequency} for
+    #        details.
+    def maximum_update_frequency=(new_frequency)
+      new_frequency = sanitize_frequency new_frequency
+      session.control_request :reconf, LS_table: id, LS_requested_max_frequency: new_frequency if @active
+      @maximum_update_frequency = new_frequency
     end
 
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
@@ -185,13 +197,15 @@ module Lightstreamer
 
     private
 
+    def sanitize_frequency(frequency)
+      frequency.to_s == 'unfiltered' ? :unfiltered : frequency.to_f
+    end
+
     def process_update_message(line)
       update_message = UpdateMessage.parse line, id, items, fields
       return unless update_message
 
-      @data_mutex.synchronize do
-        process_new_values update_message.item_index, update_message.values
-      end
+      @data_mutex.synchronize { process_new_values update_message.item_index, update_message.values }
 
       true
     end
@@ -202,24 +216,20 @@ module Lightstreamer
       data.replace(new_values) if mode == :distinct
       data.merge!(new_values) if mode == :merge
 
-      run_callbacks :on_data, @items[item_index], data, new_values
+      @callbacks.fetch(:on_data).each { |callback| callback.call self, @items[item_index], data, new_values }
     end
 
     def process_overflow_message(line)
       overflow_message = OverflowMessage.parse line, id, items
       return unless overflow_message
 
+      item_name = @items[overflow_message.item_index]
+
       @data_mutex.synchronize do
-        run_callbacks :on_overflow, @items[overflow_message.item_index], overflow_message.overflow_size
+        @callbacks.fetch(:on_overflow).each { |callback| callback.call self, item_name, overflow_message.overflow_size }
       end
 
       true
-    end
-
-    def run_callbacks(callback_type, *arguments)
-      @callbacks.fetch(callback_type).each do |callback|
-        callback.call self, *arguments
-      end
     end
   end
 end

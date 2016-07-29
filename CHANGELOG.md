@@ -6,6 +6,8 @@
   `Lightstreamer::Session#build_subscription` and there are new `#start`, `#stop` and `#unsilence` methods on
   `Lightstreamer::Subscription` that control a subscription's current state
 - Added `Lightstreamer::Subscription#set_item_data` for setting initial subscription data if desired
+- Added `Lightstreamer::Subscription#maximum_update_frequency=` for changing the update frequency after a stream has
+  been started
 - Added `Lightstreamer::Subscription#session` that returns the session for a subscription
 - Stream connection bind requests are now sent to the custom control address if one was specified in the stream
   connection header
