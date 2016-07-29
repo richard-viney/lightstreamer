@@ -1,12 +1,12 @@
 describe Lightstreamer::StreamConnection do
   let(:session) do
     instance_double 'Lightstreamer::Session', server_url: 'http://test.com', username: 'username',
-                                              password: 'password', adapter_set: 'set'
+                                              password: 'password', adapter_set: 'set', requested_maximum_bandwidth: 2.5
   end
 
   let(:create_args) do
     query = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: 'username', LS_password: 'password',
-              LS_adapter_set: 'set', LS_report_info: true }
+              LS_adapter_set: 'set', LS_requested_max_bandwidth: 2.5 }
 
     ['http://test.com/lightstreamer/create_session.txt', hash_including(query: query, connect_timeout: 15)]
   end
@@ -41,7 +41,7 @@ describe Lightstreamer::StreamConnection do
     end
 
     bind_args = ['http://a.com/lightstreamer/bind_session.txt',
-                 hash_including(query: { LS_session: 'A', LS_report_info: true }, connect_timeout: 15)]
+                 hash_including(query: { LS_session: 'A', LS_requested_max_bandwidth: 2.5 }, connect_timeout: 15)]
     expect(Excon).to receive(:post).with(*bind_args) do |_url, params|
       params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\nthree\r\nfour\r\n", nil, nil
       sleep

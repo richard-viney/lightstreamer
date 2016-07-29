@@ -1,7 +1,7 @@
 describe Lightstreamer::Session do
   let(:session) do
     Lightstreamer::Session.new server_url: 'http://test.com', username: 'username', password: 'password',
-                               adapter_set: 'adapter-set'
+                               adapter_set: 'adapter-set', requested_maximum_bandwidth: 10
   end
 
   let(:stream_connection) do
@@ -58,12 +58,6 @@ describe Lightstreamer::Session do
     expect { session.connect }.to raise_error(Lightstreamer::Errors::AuthenticationError)
   end
 
-  it 'rebinds the stream connection' do
-    session.instance_variable_set :@stream_connection, stream_connection
-    expect(session).to receive(:control_request).with(:force_rebind)
-    session.force_rebind
-  end
-
   it 'builds a new subscription' do
     expect(Lightstreamer::Subscription).to receive(:new).with(session, {}).and_return(subscription)
     expect(session.build_subscription({})).to eq(subscription)
@@ -79,11 +73,27 @@ describe Lightstreamer::Session do
     expect { session.remove_subscription subscription }.to raise_error(ArgumentError)
   end
 
-  it 'sends control requests' do
-    session.instance_variable_set :@stream_connection, stream_connection
+  context 'with an active stream connection' do
+    before do
+      session.instance_variable_set :@stream_connection, stream_connection
+    end
 
-    expect(Lightstreamer::ControlConnection).to receive(:execute).with('http://a.com', 'session', :operation, test: 1)
+    it 'rebinds the stream connection' do
+      expect(session).to receive(:control_request).with(:force_rebind)
+      session.force_rebind
+    end
 
-    session.control_request :operation, test: 1
+    it 'sets the requested maximum bandwidth' do
+      expect(session.requested_maximum_bandwidth).to eq(10)
+      expect(session).to receive(:control_request).with(:constrain, LS_requested_max_bandwidth: 15)
+      session.requested_maximum_bandwidth = 15
+      expect(session.requested_maximum_bandwidth).to eq(15)
+    end
+
+    it 'sends control requests' do
+      expect(Lightstreamer::ControlConnection).to receive(:execute).with('http://a.com', 'session', :operation, test: 1)
+
+      session.control_request :operation, test: 1
+    end
   end
 end

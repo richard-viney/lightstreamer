@@ -96,7 +96,7 @@ module Lightstreamer
 
     def create_new_stream
       params = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: @session.username,
-                 LS_password: @session.password, LS_report_info: true }
+                 LS_password: @session.password, LS_requested_max_bandwidth: @session.requested_maximum_bandwidth }
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
@@ -107,18 +107,17 @@ module Lightstreamer
     end
 
     def bind_to_existing_stream
-      url = URI.join(control_address, '/lightstreamer/bind_session.txt').to_s
+      params = { LS_session: @session_id, LS_requested_max_bandwidth: @session.requested_maximum_bandwidth }
 
-      execute_stream_post_request url, connect_timeout: 15, query: { LS_session: @session_id, LS_report_info: true }
+      url = URI.join(control_address, '/lightstreamer/bind_session.txt').to_s
+      execute_stream_post_request url, connect_timeout: 15, query: params
     end
 
     def execute_stream_post_request(url, options)
       @header = StreamConnectionHeader.new
 
       buffer = StreamBuffer.new
-      options[:response_block] = lambda do |data, _remaining_bytes, _total_bytes|
-        buffer.process data, &method(:process_stream_line)
-      end
+      options[:response_block] = -> (data, _, _) { buffer.process data, &method(:process_stream_line) }
 
       Excon.post url, options
     rescue Excon::Error => error

@@ -29,6 +29,11 @@ module Lightstreamer
     # @return [LightstreamerError, nil]
     attr_reader :error
 
+    # The server-side bandwidth constraint on data usage, expressed in kbps. If this is zero then no limit is applied.
+    #
+    # @return [Float]
+    attr_reader :requested_maximum_bandwidth
+
     # Initializes this new Lightstreamer session with the passed options.
     #
     # @param [Hash] options The options to create the session with.
@@ -36,6 +41,8 @@ module Lightstreamer
     # @option options [String] :username The username to connect to the server with.
     # @option options [String] :password The password to connect to the server with.
     # @option options [String] :adapter_set The name of the adapter set to request from the server.
+    # @option options [Float] :requested_maximum_bandwidth. The server-side bandwidth constraint on data usage,
+    #                 expressed in kbps. Defaults to zero which means no limit is applied.
     def initialize(options = {})
       @subscriptions = []
       @subscriptions_mutex = Mutex.new
@@ -44,6 +51,7 @@ module Lightstreamer
       @username = options[:username]
       @password = options[:password]
       @adapter_set = options[:adapter_set]
+      @requested_maximum_bandwidth = options[:requested_maximum_bandwidth].to_f
     end
 
     # Connects a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
@@ -139,6 +147,15 @@ module Lightstreamer
         @subscriptions.delete subscription
         subscription.instance_variable_set :@session, nil
       end
+    end
+
+    # Sets the server-side bandwidth constraint on data usage for this session, expressed in kbps. A value of zero
+    # means no limit will be applied. If an error occurs then a {LightstreamerError} subclass will be raised.
+    #
+    # @param [Float] bandwidth The new requested maximum bandwidth, expressed in kbps.
+    def requested_maximum_bandwidth=(bandwidth_kbps)
+      control_request :constrain, LS_requested_max_bandwidth: bandwidth_kbps if @stream_connection
+      @requested_maximum_bandwidth = bandwidth_kbps.to_f
     end
 
     # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.
