@@ -16,45 +16,40 @@ module Lightstreamer
       option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'
 
       def stream
-        session = create_session
-        session.connect
-
-        puts "Session ID: #{session.session_id}"
-
         @queue = Queue.new
 
-        session.subscribe create_subscription
+        create_session
+        create_subscription
 
         loop do
           puts @queue.pop unless @queue.empty?
 
-          raise session.error if session.error
+          raise @session.error if @session.error
         end
       end
 
       private
 
-      # Creates a new session from the specified options.
       def create_session
-        Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
-                                   password: options[:password], adapter_set: options[:adapter_set]
+        @session = Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
+                                              password: options[:password], adapter_set: options[:adapter_set]
+        @session.connect
+
+        puts "Session ID: #{@session.session_id}"
       end
 
-      # Creates a new subscription from the specified options.
       def create_subscription
-        subscription = Lightstreamer::Subscription.new subscription_options
+        subscription = @session.build_subscription subscription_options
 
         subscription.on_data(&method(:on_data))
         subscription.on_overflow(&method(:on_overflow))
 
-        subscription
+        subscription.start
       end
 
       def subscription_options
-        {
-          items: options[:items], fields: options[:fields], mode: options[:mode], adapter: options[:adapter],
-          maximum_update_frequency: options[:maximum_update_frequency], selector: options[:selector]
-        }
+        { items: options[:items], fields: options[:fields], mode: options[:mode], adapter: options[:adapter],
+          maximum_update_frequency: options[:maximum_update_frequency], selector: options[:selector] }
       end
 
       def on_data(_subscription, item_name, _item_data, new_values)

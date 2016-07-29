@@ -2,6 +2,11 @@
 
 ### 0.7 — Unreleased
 
+- Refactored subscription handling to be more object-oriented, subscriptions are now created using
+  `Lightstreamer::Session#build_subscription` and there are new `#start`, `#stop` and `#unsilence` methods on
+  `Lightstreamer::Subscription` that control a subscription's current state
+- Added `Lightstreamer::Subscription#set_item_data` for setting initial subscription data if desired
+- Added `Lightstreamer::Subscription#session` that returns the session for a subscription
 - Stream connection bind requests are now sent to the custom control address if one was specified in the stream
   connection header
 - Added `Lightstreamer::Session#session_id` to query the session ID

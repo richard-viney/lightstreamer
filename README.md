@@ -44,9 +44,9 @@ session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com'
 session.connect
 
 # Create a new subscription that subscribes to thirty items and to four fields on each item
-subscription = Lightstreamer::Subscription.new items: (1..30).map { |i| "item#{i}" },
-                                               fields: [:ask, :bid, :stock_name, :time],
-                                               mode: :merge, adapter: 'QUOTE_ADAPTER'
+subscription = session.build_subscription items: (1..30).map { |i| "item#{i}" },
+                                          fields: [:ask, :bid, :stock_name, :time],
+                                          mode: :merge, adapter: 'QUOTE_ADAPTER'
 
 # Create a thread-safe queue
 queue = Queue.new
@@ -57,8 +57,8 @@ subscription.on_data do |subscription, item_name, item_data, new_values|
   queue.push item_data
 end
 
-# Activate the subscription
-session.subscribe subscription
+# Start streaming data for the subscription
+subscription.start
 
 # Loop printing out new data as soon as it becomes available on the queue
 loop do

@@ -18,18 +18,17 @@ describe Lightstreamer::CLI::Main do
       .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set')
       .and_return(session)
 
-    expect(Lightstreamer::Subscription).to receive(:new)
+    expect(session).to receive(:connect)
+    expect(session).to receive(:session_id).and_return('A')
+    expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
+    expect(session).to receive(:build_subscription)
       .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil,
             selector: nil)
       .and_return(subscription)
 
     expect(subscription).to receive(:on_data)
     expect(subscription).to receive(:on_overflow)
-
-    expect(session).to receive(:connect)
-    expect(session).to receive(:session_id).and_return('A')
-    expect(session).to receive(:subscribe).with(subscription)
-    expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
+    expect(subscription).to receive(:start)
 
     expect(Queue).to receive(:new).and_return(queue)
     expect(queue).to receive(:empty?).and_return(false)

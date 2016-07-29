@@ -4,27 +4,22 @@ describe Lightstreamer::Session do
                                adapter_set: 'adapter-set'
   end
 
-  let(:stream_connection) { instance_double 'Lightstreamer::StreamConnection' }
-  let(:control_connection) { instance_double 'Lightstreamer::ControlConnection' }
+  let(:stream_connection) do
+    instance_double 'Lightstreamer::StreamConnection', session_id: 'session', control_address: 'http://a.com'
+  end
 
-  let(:subscription) { build :subscription, items: ['item'], fields: ['field'], selector: 'selector' }
+  let(:subscription) { build :subscription, session: session, items: ['item'], fields: ['field'], selector: 'selector' }
 
   context 'that can connect' do
     before do
       expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
       expect(stream_connection).to receive(:connect)
-      allow(stream_connection).to receive(:control_address).and_return('http://test2.com')
-      allow(stream_connection).to receive(:session_id).and_return('session')
     end
 
     it 'connects to a stream, processes some data, then disconnects' do
-      expect(Lightstreamer::ControlConnection).to receive(:new)
-        .with('session', 'http://test2.com')
-        .and_return(control_connection)
-
       recurring_line = "#{subscription.id},1|test"
 
-      expect(control_connection).to receive(:execute).with(:destroy) { recurring_line = nil }
+      expect(session).to receive(:control_request).with(:destroy) { recurring_line = nil }
 
       expect(stream_connection).to receive(:read_line).and_return("#{subscription.id},1|test")
       expect(stream_connection).to receive(:read_line).and_return('invalid data')
@@ -66,63 +61,30 @@ describe Lightstreamer::Session do
 
   it 'rebinds the stream connection' do
     session.instance_variable_set :@stream_connection, stream_connection
-    session.instance_variable_set :@control_connection, control_connection
-    expect(control_connection).to receive(:execute).with(:force_rebind)
+    expect(session).to receive(:control_request).with(:force_rebind)
     session.force_rebind
   end
 
-  it 'subscribes to new subscriptions' do
-    session.instance_variable_set :@control_connection, control_connection
-
-    expect(subscription).to receive(:clear_data)
-    expect(control_connection).to receive(:subscription_execute)
-      .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
-                                   adapter: subscription.adapter, maximum_update_frequency: 0.0,
-                                   selector: 'selector')
-
-    session.subscribe subscription
-
-    expect(session.subscribed?(subscription)).to be true
+  it 'builds a new subscription' do
+    expect(Lightstreamer::Subscription).to receive(:new).with(session, {}).and_return(subscription)
+    expect(session.build_subscription({})).to eq(subscription)
   end
 
-  it 'handles a subscription request failing' do
-    session.instance_variable_set :@control_connection, control_connection
-
-    expect(subscription).to receive(:clear_data)
-    expect(control_connection).to receive(:subscription_execute)
-      .with(:add, subscription.id, mode: :merge, items: subscription.items, fields: subscription.fields,
-                                   adapter: subscription.adapter, maximum_update_frequency: 0.0,
-                                   selector: 'selector')
-      .and_raise('test')
-
-    expect { session.subscribe subscription }.to raise_error('test')
-
-    expect(session.subscribed?(subscription)).to be false
-  end
-
-  it 'unsubscribes an existing subscription' do
-    session.instance_variable_set :@control_connection, control_connection
+  it 'removes a subscription' do
     session.instance_variable_set :@subscriptions, [subscription]
 
-    expect(control_connection).to receive(:subscription_execute).with(:delete, subscription.id)
+    expect(subscription).to receive(:stop)
 
-    session.unsubscribe subscription
+    session.remove_subscription subscription
 
-    expect(session.subscribed?(subscription)).to be false
+    expect { session.remove_subscription subscription }.to raise_error(ArgumentError)
   end
 
-  it 'handles a subscription unsubscribe for an unknown subscription' do
-    expect { session.unsubscribe subscription }.to raise_error(ArgumentError)
-  end
+  it 'sends control requests' do
+    session.instance_variable_set :@stream_connection, stream_connection
 
-  it 'handles a subscription unsubscribe request failing' do
-    session.instance_variable_set :@control_connection, control_connection
-    session.instance_variable_set :@subscriptions, [subscription]
+    expect(Lightstreamer::ControlConnection).to receive(:execute).with('http://a.com', 'session', :operation, test: 1)
 
-    expect(control_connection).to receive(:subscription_execute).with(:delete, subscription.id).and_raise('test')
-
-    expect { session.unsubscribe subscription }.to raise_error('test')
-
-    expect(session.subscribed?(subscription)).to be true
+    session.control_request :operation, test: 1
   end
 end

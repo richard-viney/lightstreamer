@@ -1,5 +1,6 @@
 describe Lightstreamer::Subscription do
-  let(:subscription) { build :subscription, items: [:item1, :item2], fields: [:field1, :field2] }
+  let(:session) { instance_double 'Lightstreamer::Session' }
+  let(:subscription) { build :subscription, session: session, items: [:item1, :item2], fields: [:field1, :field2] }
 
   it 'assigns unique ids to subscriptions' do
     initial_id = build(:subscription).id
@@ -23,6 +24,27 @@ describe Lightstreamer::Subscription do
 
   it 'raises an exception on unknown items' do
     expect { subscription.item_data :item3 }.to raise_error(ArgumentError)
+    expect { subscription.set_item_data :item3, {} }.to raise_error(ArgumentError)
+  end
+
+  it 'starts and stops a subscription' do
+    expect(session).to receive(:control_request)
+      .with(:add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_schema: [:field1, :field2],
+                  LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_selector: nil)
+    expect(session).to receive(:control_request).with(:delete, LS_table: subscription.id)
+
+    subscription.start
+    subscription.stop
+  end
+
+  it 'starts and unsilences a silent subscription' do
+    expect(session).to receive(:control_request)
+      .with(:add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_selector: nil,
+                         LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0)
+    expect(session).to receive(:control_request).with(:start, LS_table: subscription.id)
+
+    subscription.start silent: true
+    subscription.unsilence
   end
 
   it 'invokes callbacks when new data arrives' do
@@ -88,5 +110,13 @@ describe Lightstreamer::Subscription do
 
     expect(subscription.item_data(:item1)).to eq({})
     expect(subscription.item_data(:item2)).to eq({})
+  end
+
+  it 'sets item data' do
+    subscription.set_item_data :item1, test: 1
+    subscription.set_item_data :item2, test: 2
+
+    expect(subscription.item_data(:item1)).to eq(test: 1)
+    expect(subscription.item_data(:item2)).to eq(test: 2)
   end
 end

@@ -1,5 +1,6 @@
 FactoryGirl.define do
   factory :subscription, class: Lightstreamer::Subscription do
+    session nil
     items []
     fields []
     mode :merge
@@ -8,8 +9,8 @@ FactoryGirl.define do
     selector nil
 
     initialize_with do
-      new items: items, fields: fields, mode: mode, adapter: adapter, selector: selector,
-          maximum_update_frequency: maximum_update_frequency
+      new session, items: items, fields: fields, mode: mode, adapter: adapter, selector: selector,
+                   maximum_update_frequency: maximum_update_frequency
     end
   end
 end

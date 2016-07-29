@@ -1,6 +1,6 @@
 module Lightstreamer
-  # This class is responsible for managing a Lightstreamer session, and along with the {Subscription} class is the
-  # primary interface for working with Lightstreamer.
+  # This class is responsible for managing a Lightstreamer session, and along with the {Subscription} class forms the
+  # primary API for working with Lightstreamer.
   class Session
     # The URL of the Lightstreamer server to connect to. Set by {#initialize}.
     #
@@ -46,22 +46,23 @@ module Lightstreamer
       @adapter_set = options[:adapter_set]
     end
 
-    # Creates a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
+    # Connects a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
     # a {LightstreamerError} subclass will be raised.
     def connect
       return if @stream_connection
 
       @error = nil
 
-      create_stream_connection
-      create_control_connection
+      @stream_connection = StreamConnection.new self
+      @stream_connection.connect
+
       create_processing_thread
     rescue
       @stream_connection = nil
       raise
     end
 
-    # Returns whether this session is currently connected and has an active stream connection.
+    # Returns whether this Lightstreamer session is currently connected and has an active stream connection.
     #
     # @return [Boolean]
     def connected?
@@ -75,17 +76,20 @@ module Lightstreamer
       @stream_connection && @stream_connection.session_id
     end
 
-    # Disconnects this session and terminates the session on the server. All worker threads are exited.
+    # Disconnects this Lightstreamer session and terminates the session on the server. All worker threads are exited.
     def disconnect
-      @control_connection.execute :destroy if @control_connection
+      control_request :destroy if @stream_connection
 
       @processing_thread.join 5 if @processing_thread
     ensure
       @stream_connection.disconnect if @stream_connection
       @processing_thread.exit if @processing_thread
 
-      @processing_thread = @control_connection = @stream_connection = nil
-      @subscriptions = []
+      @subscriptions.each do |subscription|
+        subscription.instance_variable_set :@active, false
+      end
+
+      @processing_thread = @stream_connection = nil
     end
 
     # Requests that the Lightstreamer server terminate the currently active stream connection and require that a new
@@ -95,59 +99,61 @@ module Lightstreamer
     def force_rebind
       return unless @stream_connection
 
-      @control_connection.execute :force_rebind
+      control_request :force_rebind
     end
 
-    # Subscribes this Lightstreamer session to the specified subscription. If an error occurs then a
-    # {LightstreamerError} subclass will be raised.
+    # Builds a new subscription for this session with the specified options. Note that ths does not activate the
+    # subscription, {Subscription#start} must be called to actually start streaming the subscription's data. See the
+    # {Subscription} class for more details.
     #
-    # @param [Subscription] subscription The new subscription to subscribe to.
-    def subscribe(subscription)
-      subscription.clear_data
+    # @param [Hash] options The options to create the subscription with.
+    # @option options [Array] :items The names of the items to subscribe to. Required.
+    # @option options [Array] :fields The names of the fields to subscribe to on the items. Required.
+    # @option options [:distinct, :merge] :mode The operation mode of the subscription. Required.
+    # @option options [String] :adapter The name of the data adapter from this session's adapter set that should be
+    #                 used. If `nil` then the default data adapter will be used.
+    # @option options [String] :selector The selector for table items. Optional.
+    # @option options [Float, :unfiltered] :maximum_update_frequency The maximum number of updates the subscription
+    #                 should receive per second. Defaults to zero which means there is no limit on the update frequency.
+    #                 If set to `:unfiltered` then unfiltered streaming will be used for the subscription and it is
+    #                 possible for overflows to occur (see {Subscription#on_overflow}).
+    #
+    # @return [Subscription] The new subscription.
+    def build_subscription(options)
+      subscription = Subscription.new self, options
 
       @subscriptions_mutex.synchronize { @subscriptions << subscription }
 
-      options = { mode: subscription.mode, items: subscription.items, fields: subscription.fields,
-                  adapter: subscription.adapter, maximum_update_frequency: subscription.maximum_update_frequency,
-                  selector: subscription.selector }
-
-      @control_connection.subscription_execute :add, subscription.id, options
-    rescue
-      @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
-      raise
+      subscription
     end
 
-    # Returns whether the specified subscription is currently active on this session.
-    #
-    # @param [Subscription] subscription The subscription to return the status for.
-    #
-    # @return [Boolean] Whether the specified subscription is currently active on this session.
-    def subscribed?(subscription)
-      @subscriptions_mutex.synchronize { @subscriptions.include? subscription }
+    # Stops the specified subscription and removes it from this session. If an error occurs then a {LightstreamerError}
+    # subclass will be raised. To just stop a subscription with the option of restarting it at a later date call
+    # {Subscription#stop} on the subscription itself.
+    def remove_subscription(subscription)
+      raise ArgumentError, 'Unknown subscription' unless subscription.session == self
+
+      subscription.stop
+
+      @subscriptions_mutex.synchronize do
+        @subscriptions.delete subscription
+        subscription.instance_variable_set :@session, nil
+      end
     end
 
-    # Unsubscribes this Lightstreamer session from the specified subscription. If an error occurs then a
-    # {LightstreamerError} subclass will be raised.
+    # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.
     #
-    # @param [Subscription] subscription The existing subscription to unsubscribe from.
-    def unsubscribe(subscription)
-      raise ArgumentError, 'Unknown subscription' unless subscribed? subscription
+    # @param [Symbol] operation The control operation to perform.
+    # @param [Hash] options The options to send with the control request.
+    #
+    # @private
+    def control_request(operation, options = {})
+      return unless @stream_connection
 
-      @control_connection.subscription_execute :delete, subscription.id
-
-      @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
+      ControlConnection.execute @stream_connection.control_address, session_id, operation, options
     end
 
     private
-
-    def create_stream_connection
-      @stream_connection = StreamConnection.new self
-      @stream_connection.connect
-    end
-
-    def create_control_connection
-      @control_connection = ControlConnection.new @stream_connection.session_id, @stream_connection.control_address
-    end
 
     # Starts the processing thread that reads and processes incoming data from the stream connection.
     def create_processing_thread
@@ -164,11 +170,11 @@ module Lightstreamer
 
         # The stream connection has terminated so the session is assumed to be over
         @error = @stream_connection.error
-        @processing_thread = @control_connection = @stream_connection = nil
+        @processing_thread = @stream_connection = nil
       end
     end
 
-    # Processes a single line of incoming stream data by passing it to all the active subscriptions until one
+    # Processes a single line of incoming stream data by passing it to all the subscriptions until one
     # successfully processes it. This method is always run on the processing thread.
     def process_stream_data(line)
       was_processed = @subscriptions_mutex.synchronize do

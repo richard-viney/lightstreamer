@@ -1,13 +1,13 @@
 module Lightstreamer
-  # Describes a subscription that can be bound to a {Session} in order to consume its streaming data. A subscription is
-  # described by the options passed to {#initialize}. Incoming data can be consumed by registering an asynchronous data
-  # callback using {#on_data} or by polling using {#item_data}. Subscriptions start receiving data once they are
-  # attached to a session using {Session#subscribe}.
+  # This class manages a subscription that can be used to stream data from a {Session}. Subscriptions should always be
+  # created using {Session#build_subscription}. Subscriptions start receiving data after {#start} is called, and
+  # streaming subscription data can be consumed by registering an asynchronous data callback using {#on_data}, or by
+  # polling using {#item_data}.
   class Subscription
-    # The unique identification number of this subscription.
+    # The session that this subscription is associated with.
     #
-    # @return [Fixnum]
-    attr_reader :id
+    # @return [Session]
+    attr_reader :session
 
     # The names of the items to subscribe to.
     #
@@ -42,22 +42,14 @@ module Lightstreamer
     # @return [Float, :unfiltered]
     attr_reader :maximum_update_frequency
 
-    # Initializes a new Lightstreamer subscription with the specified options. This can then be passed to
-    # {Session#subscribe} to activate the subscription on a Lightstreamer session.
+    # Initializes a new Lightstreamer subscription with the specified options.
     #
+    # @param [Session] session The session this subscription is associated with.
     # @param [Hash] options The options to create the subscription with.
-    # @option options [Array] :items The names of the items to subscribe to. Required.
-    # @option options [Array] :fields The names of the fields to subscribe to on the items. Required.
-    # @option options [:distinct, :merge] :mode The operation mode of this subscription. Required.
-    # @option options [String] :adapter The name of the data adapter from the Lightstreamer session's adapter set that
-    #                 should be used. If `nil` then the default data adapter will be used.
-    # @option options [String] :selector The selector for table items. Optional.
-    # @option options [Float, :unfiltered] :maximum_update_frequency The maximum number of updates this subscription
-    #                 should receive per second. Defaults to zero which means there is no limit on the update frequency.
-    #                 If set to `:unfiltered` then unfiltered streaming will be used for this subscription and it is
-    #                 possible for overflows to occur (see {#on_overflow}).
-    def initialize(options)
-      @id = self.class.next_id
+    #
+    # @private
+    def initialize(session, options)
+      @session = session
 
       @items = options.fetch(:items)
       @fields = options.fetch(:fields)
@@ -70,6 +62,47 @@ module Lightstreamer
 
       clear_data
       clear_callbacks
+    end
+
+    # Returns this subscription's unique identification number.
+    #
+    # @return [Fixnum]
+    #
+    # @private
+    def id
+      @id ||= self.class.next_id
+    end
+
+    # Starts streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
+    # will be raised.
+    #
+    # @param [Hash] options The options to start the subscription with.
+    # @option options [Boolean] :silent Whether the subscription should be started in silent mode. In silent mode the
+    #                 subscription is initiated on the server and begins buffering incoming data, however this data will
+    #                 not be sent to the client for processing until {#unsilence} is called.
+    def start(options = {})
+      return if @active
+
+      operation = options[:silent] ? :add_silent : :add
+      options = { LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items, LS_schema: fields, LS_data_adapter: adapter,
+                  LS_requested_max_frequency: maximum_update_frequency, LS_selector: selector }
+
+      session.control_request operation, options
+      @active = true
+    end
+
+    # Unsilences this subscription if it was initially started in silent mode (by passing `silent: true` to {#start}).
+    # If this subscription was not started in silent mode then this method has no effect. If an error occurs then a
+    # {LightstreamerError} subclass will be raised.
+    def unsilence
+      session.control_request :start, LS_table: id if @active
+    end
+
+    # Stops streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
+    # will be raised.
+    def stop
+      session.control_request :delete, LS_table: id if @active
+      @active = false
     end
 
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
@@ -85,9 +118,7 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when new data arrives.
     def on_data(&callback)
-      @data_mutex.synchronize do
-        @callbacks[:on_data] << callback
-      end
+      @data_mutex.synchronize { @callbacks[:on_data] << callback }
     end
 
     # Adds the passed block to the list of callbacks that will be run when the server reports an overflow for this
@@ -96,16 +127,12 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when an overflow is reported for this subscription.
     def on_overflow(&callback)
-      @data_mutex.synchronize do
-        @callbacks[:on_overflow] << callback
-      end
+      @data_mutex.synchronize { @callbacks[:on_overflow] << callback }
     end
 
     # Removes all {#on_data} and {#on_overflow} callbacks present on this subscription.
     def clear_callbacks
-      @data_mutex.synchronize do
-        @callbacks = { on_data: [], on_overflow: [] }
-      end
+      @data_mutex.synchronize { @callbacks = { on_data: [], on_overflow: [] } }
     end
 
     # Returns a copy of the current data of one of this subscription's items.
@@ -117,9 +144,20 @@ module Lightstreamer
       index = @items.index item_name
       raise ArgumentError, 'Unknown item' unless index
 
-      @data_mutex.synchronize do
-        @data[index].dup
-      end
+      @data_mutex.synchronize { @data[index].dup }
+    end
+
+    # Sets the current data for the item with the specified name.
+    #
+    # @param [String] item_name The name of the item to set the data for.
+    # @param [Hash] item_data The new data for the item.
+    def set_item_data(item_name, item_data)
+      index = @items.index item_name
+      raise ArgumentError, 'Unknown item' unless index
+
+      raise ArgumentError, 'Item data must be a hash' unless item_data.is_a? Hash
+
+      @data_mutex.synchronize { @data[index] = item_data.dup }
     end
 
     # Processes a line of stream data if it is relevant to this subscription. This method is thread-safe and is intended
