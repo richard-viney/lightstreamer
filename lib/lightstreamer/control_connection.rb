@@ -82,7 +82,7 @@ module Lightstreamer
           error_code = response_lines.shift
           LightstreamerError.build response_lines.shift, error_code
         else
-          LightstreamerError.new 'Unknown error'
+          LightstreamerError.new first_line
         end
       end
     end

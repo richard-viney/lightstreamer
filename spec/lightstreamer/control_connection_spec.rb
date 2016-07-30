@@ -43,15 +43,27 @@ describe Lightstreamer::ControlConnection do
     end
   end
 
-  it 'sends bulk requests and any errors that occur' do
+  it 'sends bulk requests and reports any errors that occur' do
     expect(Excon).to receive(:post)
-      .with('http://a.com/lightstreamer/control.txt', body: "body1\r\nbody2", connect_timeout: 15, expects: 200)
-      .and_return(build_response("OK\r\nERROR\r\n2\r\n"))
+      .with('http://a.com/lightstreamer/control.txt', body: "A\r\nB\r\nC", connect_timeout: 15, expects: 200)
+      .and_return(build_response("OK\r\nERROR\r\n2\r\nERROR MESSAGE\r\nINVALID RESPONSE\r\n"))
 
-    errors = Lightstreamer::ControlConnection.bulk_execute('http://a.com', %w(body1 body2))
+    errors = Lightstreamer::ControlConnection.bulk_execute('http://a.com', %w(A B C))
 
-    expect(errors.size).to eq(2)
+    expect(errors.size).to eq(3)
     expect(errors[0]).to be nil
     expect(errors[1]).to be_a(Lightstreamer::Errors::UnknownAdapterSetError)
+    expect(errors[2]).to be_a(Lightstreamer::LightstreamerError)
+    expect(errors[2].message).to eq('INVALID RESPONSE')
+  end
+
+  it 'handles invalid error response for bulk requests' do
+    expect(Excon).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: "body1\r\nbody2", connect_timeout: 15, expects: 200)
+      .and_return(build_response("OK\r\nOK\r\nOK\r\n"))
+
+    expect do
+      Lightstreamer::ControlConnection.bulk_execute 'http://a.com', %w(body1 body2)
+    end.to raise_error(Lightstreamer::LightstreamerError)
   end
 end
