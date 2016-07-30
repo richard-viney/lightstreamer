@@ -24,7 +24,7 @@ module Lightstreamer
 
     # If an error occurs on the stream connection that causes the session to terminate then details of the error will be
     # stored in this attribute. If the session is terminated as a result of calling {#disconnect} then the error will be
-    # {SessionEndError}.
+    # {Errors::SessionEndError}.
     #
     # @return [LightstreamerError, nil]
     attr_reader :error
@@ -149,13 +149,36 @@ module Lightstreamer
       end
     end
 
+    # This method performs a bulk {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on
+    # each of them individually would also work but requires a separate POST request to be sent for every subscription.
+    # This request starts all of the passed subscriptions in a single POST request which is significantly faster for
+    # a large number of subscriptions. The return value is an array with one entry per subscription and indicates the
+    # error state returned by the server for that subscription's start request, or `nil` if no error occurred.
+    #
+    # @param [Array<Subscription>] subscriptions The subscriptions to start.
+    #
+    # @return [Array<LightstreamerError, nil>]
+    def bulk_subscription_start(*subscriptions)
+      request_bodies = subscriptions.map do |subscription|
+        ControlConnection.body_for_request session_id, *subscription.start_control_request_args
+      end
+
+      errors = ControlConnection.bulk_execute @stream_connection.control_address, request_bodies
+
+      # Set @active to true on all subscriptions that did not have an error
+      errors.each_with_index do |error, index|
+        next if error
+        subscriptions[index].instance_variable_set :@active, true
+      end
+    end
+
     # Sets the server-side bandwidth constraint on data usage for this session, expressed in kbps. A value of zero
     # means no limit will be applied. If an error occurs then a {LightstreamerError} subclass will be raised.
     #
     # @param [Float] bandwidth The new requested maximum bandwidth, expressed in kbps.
-    def requested_maximum_bandwidth=(bandwidth_kbps)
-      control_request :constrain, LS_requested_max_bandwidth: bandwidth_kbps if @stream_connection
-      @requested_maximum_bandwidth = bandwidth_kbps.to_f
+    def requested_maximum_bandwidth=(bandwidth)
+      control_request :constrain, LS_requested_max_bandwidth: bandwidth if @stream_connection
+      @requested_maximum_bandwidth = bandwidth.to_f
     end
 
     # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.

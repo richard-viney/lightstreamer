@@ -5,10 +5,12 @@
 - Refactored subscription handling to be more object-oriented, subscriptions are now created using
   `Lightstreamer::Session#build_subscription` and there are new `#start`, `#stop` and `#unsilence` methods on
   `Lightstreamer::Subscription` that control a subscription's current state
+- Added `Lightstreamer::Session#bulk_subscription_start` for efficiently starting a number of subscriptions at once
 - Added support for setting initial subscription data
 - Added support for changing a subscription's requested update frequency after it has been started
 - Added support for setting and altering the session's requested maximum bandwidth
 - Added `Lightstreamer::Session#session_id` to query the session ID
+- Added `Lightstreamer::Subscription#active` to query whether the subscription is active and streaming data
 - Stream connection bind requests are now sent to the custom control address if one was specified in the stream
   connection header
 - The command-line client now prints the session ID following successful connection

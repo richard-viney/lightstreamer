@@ -7,30 +7,45 @@ module Lightstreamer
       # Sends a Lightstreamer control request that executes the specified operation with the specified options. If an
       # error occurs then a {LightstreamerError} subclass will be raised.
       #
-      # @param [String] control_address The operation to execute.
-      # @param [String] session_id The Lightstreamer session IDs.
+      # @param [String] control_address The control address to use.
+      # @param [String] session_id The Lightstreamer session ID.
       # @param [String] operation The operation to execute.
       # @param [Hash] options The options to include with the request.
       def execute(control_address, session_id, operation, options = {})
-        url = URI.join(control_address, '/lightstreamer/control.txt').to_s
+        body = body_for_request session_id, operation, options
 
-        result = execute_request url, build_payload(session_id, operation, options)
+        response_lines = execute_request control_address, body
 
-        raise Errors::SyncError if result.first == 'SYNC ERROR'
-        raise LightstreamerError.build(result[2], result[1]) if result.first != 'OK'
+        error = parse_error response_lines
+        raise error if error
       end
 
-      private
+      # Executes multiple Lightstreamer control requests in one single bulk request. The bodies of the requests are
+      # concatenated and sent as one. The return value is an array with one entry per body and indicates the error state
+      # returned by the server for that body's request, or `nil` if no error occurred.
+      #
+      # @param [String] control_address The operation to execute.
+      # @param [Array<String>] bodies The request bodies that are to be sent together in one request.
+      #
+      # @return [Array<LightstreamerError, nil>] The execution result of each of the passed bodies. If an entry if `nil`
+      #         then no error occurred when executing that body.
+      def bulk_execute(control_address, bodies)
+        response_lines = execute_request control_address, bodies.join("\r\n")
 
-      def execute_request(url, payload)
-        response = Excon.post url, body: URI.encode_www_form(payload), connect_timeout: 15
+        errors = []
+        errors << parse_error(response_lines) until response_lines.empty?
 
-        response.body.split("\n").map(&:strip)
-      rescue Excon::Error => error
-        raise Errors::ConnectionError, error.message
+        raise LightstreamerError if errors.size != bodies.size
+
+        errors
       end
 
-      def build_payload(session_id, operation, options)
+      # Returns the body to send for a control request with the given session ID, operation and options.
+      #
+      # @param [String] session_id The Lightstreamer session ID.
+      # @param [String] operation The operation to execute.
+      # @param [Hash] options The options to include with the request.
+      def body_for_request(session_id, operation, options)
         params = {}
 
         params[:LS_session] = session_id
@@ -42,7 +57,33 @@ module Lightstreamer
           params[key] = value
         end
 
-        params
+        URI.encode_www_form params
+      end
+
+      private
+
+      def execute_request(control_address, body)
+        url = URI.join(control_address, '/lightstreamer/control.txt').to_s
+
+        response = Excon.post url, body: body, connect_timeout: 15, expects: 200
+
+        response.body.split("\n").map(&:strip)
+      rescue Excon::Error => error
+        raise Errors::ConnectionError, error.message
+      end
+
+      def parse_error(response_lines)
+        first_line = response_lines.shift
+
+        return nil if first_line == 'OK'
+        return Errors::SyncError.new if first_line == 'SYNC ERROR'
+
+        if first_line == 'ERROR'
+          error_code = response_lines.shift
+          LightstreamerError.build response_lines.shift, error_code
+        else
+          LightstreamerError.new 'Unknown error'
+        end
       end
     end
   end

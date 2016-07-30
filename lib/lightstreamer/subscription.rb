@@ -42,6 +42,11 @@ module Lightstreamer
     # @return [Float, :unfiltered]
     attr_reader :maximum_update_frequency
 
+    # Whether this subscription is currently started and actively streaming data. See {#start} and {#stop} for details.
+    #
+    # @return [Boolean]
+    attr_reader :active
+
     # Initializes a new Lightstreamer subscription with the specified options.
     #
     # @param [Session] session The session this subscription is associated with.
@@ -81,14 +86,23 @@ module Lightstreamer
     #                 subscription is initiated on the server and begins buffering incoming data, however this data will
     #                 not be sent to the client for processing until {#unsilence} is called.
     def start(options = {})
-      return if @active
+      session.control_request(*start_control_request_args(options)) unless @active
+      @active = true
+    end
 
+    # Returns the arguments to pass to to {Session#control_request} in order ot start this subscription with the given
+    # options.
+    #
+    # @param [Hash] options The options to start the subscription with.
+    #
+    # @private
+    def start_control_request_args(options = {})
       operation = options[:silent] ? :add_silent : :add
+
       options = { LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items, LS_schema: fields, LS_data_adapter: adapter,
                   LS_requested_max_frequency: maximum_update_frequency, LS_selector: selector }
 
-      session.control_request operation, options
-      @active = true
+      [operation, options]
     end
 
     # Unsilences this subscription if it was initially started in silent mode (by passing `silent: true` to {#start}).
@@ -182,7 +196,8 @@ module Lightstreamer
     #
     # @private
     def process_stream_data(line)
-      process_update_message(line) || process_overflow_message(line)
+      return true if process_update_message UpdateMessage.parse(line, id, items, fields)
+      return true if process_overflow_message OverflowMessage.parse(line, id, items)
     end
 
     # Returns the next unique subscription ID.
@@ -201,11 +216,10 @@ module Lightstreamer
       frequency.to_s == 'unfiltered' ? :unfiltered : frequency.to_f
     end
 
-    def process_update_message(line)
-      update_message = UpdateMessage.parse line, id, items, fields
-      return unless update_message
+    def process_update_message(message)
+      return unless message
 
-      @data_mutex.synchronize { process_new_values update_message.item_index, update_message.values }
+      @data_mutex.synchronize { process_new_values message.item_index, message.values }
 
       true
     end
@@ -219,14 +233,13 @@ module Lightstreamer
       @callbacks.fetch(:on_data).each { |callback| callback.call self, @items[item_index], data, new_values }
     end
 
-    def process_overflow_message(line)
-      overflow_message = OverflowMessage.parse line, id, items
-      return unless overflow_message
+    def process_overflow_message(message)
+      return unless message
 
-      item_name = @items[overflow_message.item_index]
+      item_name = @items[message.item_index]
 
       @data_mutex.synchronize do
-        @callbacks.fetch(:on_overflow).each { |callback| callback.call self, item_name, overflow_message.overflow_size }
+        @callbacks.fetch(:on_overflow).each { |callback| callback.call self, item_name, message.overflow_size }
       end
 
       true

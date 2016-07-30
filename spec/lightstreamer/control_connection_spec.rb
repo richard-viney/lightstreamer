@@ -6,7 +6,7 @@ describe Lightstreamer::ControlConnection do
   it 'handles a successful request' do
     expect(Excon).to receive(:post)
       .with('http://a.com/lightstreamer/control.txt', body: 'LS_session=session&LS_op=test&key=a+b',
-                                                      connect_timeout: 15)
+                                                      connect_timeout: 15, expects: 200)
       .and_return(build_response("OK\r\n"))
 
     Lightstreamer::ControlConnection.execute 'http://a.com', 'session', :test, key: %w(a b), ignore_me: nil
@@ -14,7 +14,8 @@ describe Lightstreamer::ControlConnection do
 
   it 'handles an error response' do
     expect(Excon).to receive(:post)
-      .with('http://a.com/lightstreamer/control.txt', body: 'LS_session=session&LS_op=test', connect_timeout: 15)
+      .with('http://a.com/lightstreamer/control.txt', body: 'LS_session=session&LS_op=test', connect_timeout: 15,
+                                                      expects: 200)
       .and_return(build_response("ERROR\r\n1\r\nError message\r\n"))
 
     expect do
@@ -24,7 +25,8 @@ describe Lightstreamer::ControlConnection do
 
   it 'handles a sync error response' do
     expect(Excon).to receive(:post)
-      .with('http://a.com/lightstreamer/control.txt', body: 'LS_session=session&LS_op=test', connect_timeout: 15)
+      .with('http://a.com/lightstreamer/control.txt', body: 'LS_session=session&LS_op=test', connect_timeout: 15,
+                                                      expects: 200)
       .and_return(build_response("SYNC ERROR\r\n"))
 
     expect do
@@ -39,5 +41,17 @@ describe Lightstreamer::ControlConnection do
       expect(error).to be_a(Lightstreamer::Errors::ConnectionError)
       expect(error.message).to eq('Error message')
     end
+  end
+
+  it 'sends bulk requests and any errors that occur' do
+    expect(Excon).to receive(:post)
+      .with('http://a.com/lightstreamer/control.txt', body: "body1\r\nbody2", connect_timeout: 15, expects: 200)
+      .and_return(build_response("OK\r\nERROR\r\n2\r\n"))
+
+    errors = Lightstreamer::ControlConnection.bulk_execute('http://a.com', %w(body1 body2))
+
+    expect(errors.size).to eq(2)
+    expect(errors[0]).to be nil
+    expect(errors[1]).to be_a(Lightstreamer::Errors::UnknownAdapterSetError)
   end
 end

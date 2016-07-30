@@ -95,5 +95,27 @@ describe Lightstreamer::Session do
 
       session.control_request :operation, test: 1
     end
+
+    it 'performs a bulk subscription start' do
+      second_subscription = build :subscription
+
+      expect(subscription.active).to be_falsey
+      expect(second_subscription.active).to be_falsey
+
+      expect(Lightstreamer::ControlConnection).to receive(:body_for_request).and_return('body1')
+      expect(Lightstreamer::ControlConnection).to receive(:body_for_request).and_return('body2')
+      expect(Lightstreamer::ControlConnection).to receive(:bulk_execute)
+        .with('http://a.com', %w(body1 body2))
+        .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new])
+
+      errors = session.bulk_subscription_start subscription, second_subscription
+
+      expect(errors.size).to eq(2)
+      expect(errors[0]).to be nil
+      expect(errors[1]).to be_a(Lightstreamer::Errors::InvalidDataAdapterError)
+
+      expect(subscription.active).to be true
+      expect(second_subscription.active).to be_falsey
+    end
   end
 end
