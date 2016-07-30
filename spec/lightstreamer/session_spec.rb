@@ -91,7 +91,8 @@ describe Lightstreamer::Session do
     end
 
     it 'sends control requests' do
-      expect(Lightstreamer::ControlConnection).to receive(:execute).with('http://a.com', 'session', :operation, test: 1)
+      expect(Lightstreamer::PostRequest).to receive(:execute)
+        .with('http://a.com/lightstreamer/control.txt', LS_session: 'session', LS_op: :operation, test: 1)
 
       session.control_request :operation, test: 1
     end
@@ -102,9 +103,9 @@ describe Lightstreamer::Session do
       expect(subscription.active).to be_falsey
       expect(second_subscription.active).to be_falsey
 
-      expect(Lightstreamer::ControlConnection).to receive(:body_for_request).and_return('body1')
-      expect(Lightstreamer::ControlConnection).to receive(:body_for_request).and_return('body2')
-      expect(Lightstreamer::ControlConnection).to receive(:bulk_execute)
+      expect(Lightstreamer::PostRequest).to receive(:request_body).and_return('body1')
+      expect(Lightstreamer::PostRequest).to receive(:request_body).and_return('body2')
+      expect(Lightstreamer::PostRequest).to receive(:bulk_execute)
         .with('http://a.com', %w(body1 body2))
         .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new])
 

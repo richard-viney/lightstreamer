@@ -160,10 +160,10 @@ module Lightstreamer
     # @return [Array<LightstreamerError, nil>]
     def bulk_subscription_start(*subscriptions)
       request_bodies = subscriptions.map do |subscription|
-        ControlConnection.body_for_request session_id, *subscription.start_control_request_args
+        PostRequest.request_body session_id, *subscription.start_control_request_args
       end
 
-      errors = ControlConnection.bulk_execute @stream_connection.control_address, request_bodies
+      errors = PostRequest.bulk_execute @stream_connection.control_address, request_bodies
 
       # Set @active to true on all subscriptions that did not have an error
       errors.each_with_index do |error, index|
@@ -190,7 +190,8 @@ module Lightstreamer
     def control_request(operation, options = {})
       return unless @stream_connection
 
-      ControlConnection.execute @stream_connection.control_address, session_id, operation, options
+      url = URI.join(@stream_connection.control_address, '/lightstreamer/control.txt').to_s
+      PostRequest.execute url, options.merge(LS_session: session_id, LS_op: operation)
     end
 
     private
