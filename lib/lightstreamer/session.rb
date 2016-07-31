@@ -140,6 +140,8 @@ module Lightstreamer
     # Stops the specified subscription and removes it from this session. If an error occurs then a {LightstreamerError}
     # subclass will be raised. To just stop a subscription with the option of restarting it at a later date call
     # {Subscription#stop} on the subscription itself.
+    #
+    # @param [Subscription] subscription The subscription to stop and remove from this session.
     def remove_subscription(subscription)
       subscription.stop
 
