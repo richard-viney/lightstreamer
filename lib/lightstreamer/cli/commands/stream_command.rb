@@ -8,6 +8,7 @@ module Lightstreamer
       option :username, desc: 'The username for the session'
       option :password, desc: 'The password for the session'
       option :adapter_set, desc: 'The name of the adapter set for the session'
+      option :requested_maximum_bandwidth, type: :numeric, desc: 'The requested maximum bandwidth, in kbps'
       option :adapter, desc: 'The name of the data adapter to stream data from'
       option :items, type: :array, required: true, desc: 'The names of the item(s) to stream'
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
@@ -32,7 +33,8 @@ module Lightstreamer
 
       def create_session
         @session = Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
-                                              password: options[:password], adapter_set: options[:adapter_set]
+                                              password: options[:password], adapter_set: options[:adapter_set],
+                                              requested_maximum_bandwidth: options[:requested_maximum_bandwidth]
         @session.connect
         @session.on_message_result(&method(:on_message_result))
 

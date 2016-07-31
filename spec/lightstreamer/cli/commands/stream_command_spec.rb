@@ -1,13 +1,9 @@
 describe Lightstreamer::CLI::Main do
-  class ExitLoopError < StandardError
+  let(:cli) do
+    Lightstreamer::CLI::Main.new [], server_url: 'http://a.com', username: 'username', password: 'password',
+                                     adapter_set: 'adapter-set', requested_maximum_bandwidth: nil, adapter: 'adapter',
+                                     items: ['item'], fields: ['field'], mode: :merge
   end
-
-  let(:arguments) do
-    { server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set',
-      adapter: 'adapter', items: ['item'], fields: ['field'], mode: :merge }
-  end
-
-  let(:cli) { Lightstreamer::CLI::Main.new [], arguments }
 
   let(:session) { instance_double 'Lightstreamer::Session' }
   let(:subscription) { instance_double 'Lightstreamer::Subscription' }
@@ -15,7 +11,8 @@ describe Lightstreamer::CLI::Main do
 
   it 'prints stream data' do
     expect(Lightstreamer::Session).to receive(:new)
-      .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set')
+      .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set',
+            requested_maximum_bandwidth: nil)
       .and_return(session)
 
     expect(session).to receive(:on_message_result)

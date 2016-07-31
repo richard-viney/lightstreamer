@@ -17,6 +17,7 @@
 - Stream connection bind requests are now sent to the custom control address if one was specified in the stream
   connection header
 - The command-line client now prints the session ID following successful connection
+- Added —requested-maximum-bandwidth option
 
 ### 0.6 — July 27, 2016
 
