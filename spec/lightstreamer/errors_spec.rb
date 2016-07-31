@@ -41,6 +41,9 @@ describe Lightstreamer::LightstreamerError do
       30 => Lightstreamer::Errors::SubscriptionsNotAllowedByLicenseError,
       32 => Lightstreamer::Errors::InvalidProgressiveNumberError,
       33 => Lightstreamer::Errors::InvalidProgressiveNumberError,
+      34 => Lightstreamer::Errors::IllegalMessageError,
+      38 => Lightstreamer::Errors::MessagesSkippedByTimeoutError,
+      39 => Lightstreamer::Errors::MessagesSkippedByTimeoutError,
       60 => Lightstreamer::Errors::ClientVersionNotSupportedError
     }.each do |error_code, error_class|
       expect(Lightstreamer::LightstreamerError.build('', error_code)).to be_a(error_class)

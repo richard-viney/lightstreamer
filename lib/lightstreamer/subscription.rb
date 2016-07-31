@@ -50,7 +50,7 @@ module Lightstreamer
     # Initializes a new Lightstreamer subscription with the specified options.
     #
     # @param [Session] session The session this subscription is associated with.
-    # @param [Hash] options The options to create the subscription with.
+    # @param [Hash] options The options to create the subscription with. See {Session#build_subscription}
     #
     # @private
     def initialize(session, options)
@@ -75,7 +75,7 @@ module Lightstreamer
     #
     # @private
     def id
-      @id ||= self.class.next_id
+      @id ||= ID_GENERATOR.next
     end
 
     # Starts streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
@@ -200,17 +200,9 @@ module Lightstreamer
       return true if process_overflow_message OverflowMessage.parse(line, id, items)
     end
 
-    # Returns the next unique subscription ID.
-    #
-    # @return [Fixnum]
-    #
-    # @private
-    def self.next_id
-      @next_id ||= 0
-      @next_id += 1
-    end
-
     private
+
+    ID_GENERATOR = (1..Float::INFINITY).each
 
     def sanitize_frequency(frequency)
       frequency.to_s == 'unfiltered' ? :unfiltered : frequency.to_f

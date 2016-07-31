@@ -52,6 +52,8 @@ module Lightstreamer
       @password = options[:password]
       @adapter_set = options[:adapter_set]
       @requested_maximum_bandwidth = options[:requested_maximum_bandwidth].to_f
+
+      @on_message_result_callbacks = []
     end
 
     # Connects a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
@@ -139,14 +141,9 @@ module Lightstreamer
     # subclass will be raised. To just stop a subscription with the option of restarting it at a later date call
     # {Subscription#stop} on the subscription itself.
     def remove_subscription(subscription)
-      raise ArgumentError, 'Unknown subscription' unless subscription.session == self
-
       subscription.stop
 
-      @subscriptions_mutex.synchronize do
-        @subscriptions.delete subscription
-        subscription.instance_variable_set :@session, nil
-      end
+      @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
     end
 
     # This method performs a bulk {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on
@@ -167,8 +164,7 @@ module Lightstreamer
 
       # Set @active to true on all subscriptions that did not have an error
       errors.each_with_index do |error, index|
-        next if error
-        subscriptions[index].instance_variable_set :@active, true
+        subscriptions[index].instance_variable_set :@active, true if error.nil?
       end
     end
 
@@ -177,20 +173,54 @@ module Lightstreamer
     #
     # @param [Float] bandwidth The new requested maximum bandwidth, expressed in kbps.
     def requested_maximum_bandwidth=(bandwidth)
-      control_request :constrain, LS_requested_max_bandwidth: bandwidth if @stream_connection
+      control_request :constrain, LS_requested_max_bandwidth: bandwidth if connected?
       @requested_maximum_bandwidth = bandwidth.to_f
+    end
+
+    # Sends a custom message to the Lightstreamer server. Message sending can be done synchronously or asynchronously.
+    # By default the message will be sent synchronously, i.e. the message will be processed by the server and if an
+    # error occurs a {LightstreamerError} subclass will be raised immediately. However, if the `:async` option is true
+    # then the message will be sent asynchronously, and the result of the message send will be reported to all callbacks
+    # that have been registered via {#on_message_result}.
+    #
+    # @param [String] message The message to send to the Lightstreamer server.
+    # @param [Hash] options The options that control messages sent asynchronously.
+    # @option options [Boolean] :async Whether to send the message asynchronously. Defaults to `false`.
+    # @option options [String] :sequence The alphanumeric identifier that identifies a subset of messages that are to
+    #                 be processed in sequence based on the `:number` given to them. If the special `UNORDERED_MESSAGES`
+    #                 sequence is used then the associated messages are processed immediately, possibly concurrently,
+    #                 with no ordering constraint.
+    # @option options [Fixnum] :number The progressive number of this message within its sequence. Should start at 1.
+    # @option options [Float] :max_wait The maximum time the server can wait before processing this message if one or
+    #                 more of the preceding messages in the same sequence have not been received. If not specified then
+    #                 a timeout is assigned by the server.
+    def send_message(message, options = {})
+      url = URI.join(@stream_connection.control_address, '/lightstreamer/send_message.txt').to_s
+
+      query = { LS_session: session_id, LS_message: message }
+      query[:LS_sequence] = options.fetch(:sequence) if options[:async]
+      query[:LS_msg_prog] = options.fetch(:number) if options[:async]
+      query[:LS_max_wait] = options[:max_wait] if options[:max_wait]
+
+      PostRequest.execute url, query
+    end
+
+    # Adds the passed block to the list of callbacks that will be run when the outcome of an asynchronous message send
+    # arrives. The block will be called on a worker thread and so the code that is run by the block must be thread-safe.
+    # The arguments passed to the block are `|sequence, numbers, error|`.
+    #
+    # @param [Proc] block The callback that is to be run.
+    def on_message_result(&block)
+      @on_message_result_callbacks << block
     end
 
     # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.
     #
     # @param [Symbol] operation The control operation to perform.
     # @param [Hash] options The options to send with the control request.
-    #
-    # @private
     def control_request(operation, options = {})
-      return unless @stream_connection
-
       url = URI.join(@stream_connection.control_address, '/lightstreamer/control.txt').to_s
+
       PostRequest.execute url, options.merge(LS_session: session_id, LS_op: operation)
     end
 
@@ -203,10 +233,9 @@ module Lightstreamer
 
         loop do
           line = @stream_connection.read_line
-
           break if line.nil?
 
-          process_stream_data line unless line.empty?
+          process_stream_line line
         end
 
         # The stream connection has terminated so the session is assumed to be over
@@ -217,14 +246,24 @@ module Lightstreamer
 
     # Processes a single line of incoming stream data by passing it to all the subscriptions until one
     # successfully processes it. This method is always run on the processing thread.
-    def process_stream_data(line)
-      was_processed = @subscriptions_mutex.synchronize do
-        @subscriptions.detect do |subscription|
-          subscription.process_stream_data line
-        end
+    def process_stream_line(line)
+      return if @subscriptions.any? { |subscription| subscription.process_stream_data line }
+      return if process_send_message_outcome line
+
+      warn "Lightstreamer: unprocessed stream data '#{line}'"
+    end
+
+    # Attempts to process the passed line as a send message outcome message, and if is such a message then the
+    # registered callbacks are run.
+    def process_send_message_outcome(line)
+      outcome = SendMessageOutcomeMessage.parse line
+      return unless outcome
+
+      @on_message_result_callbacks.each do |callback|
+        callback.call outcome.sequence, outcome.numbers, outcome.error
       end
 
-      warn "Lightstreamer: unprocessed stream data '#{line}'" unless was_processed
+      true
     end
   end
 end

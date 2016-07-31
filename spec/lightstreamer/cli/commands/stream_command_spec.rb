@@ -18,6 +18,7 @@ describe Lightstreamer::CLI::Main do
       .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set')
       .and_return(session)
 
+    expect(session).to receive(:on_message_result)
     expect(session).to receive(:connect)
     expect(session).to receive(:session_id).and_return('A')
     expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
@@ -43,13 +44,22 @@ describe Lightstreamer::CLI::Main do
     cli.instance_variable_set :@queue, queue
     expect(queue).to receive(:push).with('item - field1: 1, field2: 2')
 
-    cli.send(:on_data, subscription, 'item', {}, field1: '1', field2: '2')
+    cli.send :on_data, subscription, 'item', {}, field1: '1', field2: '2'
   end
 
   it 'formats overflow notifcations correctly' do
     cli.instance_variable_set :@queue, queue
     expect(queue).to receive(:push).with('Overflow of size 3 on item item')
 
-    cli.send(:on_overflow, subscription, 'item', 3)
+    cli.send :on_overflow, subscription, 'item', 3
+  end
+
+  it 'formats message outcomes correctly' do
+    cli.instance_variable_set :@queue, queue
+    expect(queue).to receive(:push).with('Message result for name[1] = Done')
+    expect(queue).to receive(:push).with('Message result for name[2, 3] = Lightstreamer::Errors::IllegalMessageError')
+
+    cli.send :on_message_result, 'name', [1], nil
+    cli.send :on_message_result, 'name', [2, 3], Lightstreamer::Errors::IllegalMessageError.new
   end
 end

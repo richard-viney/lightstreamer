@@ -6,6 +6,9 @@
   `Lightstreamer::Session#build_subscription` and there are new `#start`, `#stop` and `#unsilence` methods on
   `Lightstreamer::Subscription` that control a subscription's current state
 - Added `Lightstreamer::Session#bulk_subscription_start` for efficiently starting a number of subscriptions at once
+- Added support for sending custom messages using `Lightstreamer::Session#send_message`, both synchronous and
+  asynchronous messages are supported, and the results of asynchronous messages can be checked using the new
+  `Lightstreamer::Session#on_message_result` callback
 - Added support for setting initial subscription data
 - Added support for changing a subscription's requested update frequency after it has been started
 - Added support for setting and altering the session's requested maximum bandwidth

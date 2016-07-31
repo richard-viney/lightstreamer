@@ -34,6 +34,7 @@ module Lightstreamer
         @session = Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
                                               password: options[:password], adapter_set: options[:adapter_set]
         @session.connect
+        @session.on_message_result(&method(:on_message_result))
 
         puts "Session ID: #{@session.session_id}"
       end
@@ -58,6 +59,10 @@ module Lightstreamer
 
       def on_overflow(_subscription, item_name, overflow_size)
         @queue.push "Overflow of size #{overflow_size} on item #{item_name}"
+      end
+
+      def on_message_result(sequence, numbers, error)
+        @queue.push "Message result for #{sequence}#{numbers} = #{error ? error.class : 'Done'}"
       end
     end
   end

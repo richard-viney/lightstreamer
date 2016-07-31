@@ -95,6 +95,18 @@ module Lightstreamer
     class InvalidProgressiveNumberError < LightstreamerError
     end
 
+    # This error occurs when a send message request was refused as illegal by the metadata adapter.
+    class IllegalMessageError < LightstreamerError
+    end
+
+    # This error occurs when the elaboration of a sent message failed unexpectedly.
+    class MessageElaborationFailedError < LightstreamerError
+    end
+
+    # This error occurs when sent message(s) were not processed due to a timeout.
+    class MessagesSkippedByTimeoutError < LightstreamerError
+    end
+
     # This error is raised when the client version requested is not supported by the server.
     class ClientVersionNotSupportedError < LightstreamerError
     end
@@ -209,6 +221,10 @@ module Lightstreamer
       30 => Errors::SubscriptionsNotAllowedByLicenseError,
       32 => Errors::InvalidProgressiveNumberError,
       33 => Errors::InvalidProgressiveNumberError,
+      34 => Errors::IllegalMessageError,
+      35 => Errors::MessageElaborationFailedError,
+      38 => Errors::MessagesSkippedByTimeoutError,
+      39 => Errors::MessagesSkippedByTimeoutError,
       60 => Errors::ClientVersionNotSupportedError
     }.freeze
 

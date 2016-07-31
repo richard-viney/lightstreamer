@@ -14,18 +14,24 @@ describe Lightstreamer::Session do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
     expect(stream_connection).to receive(:connect)
 
+    on_message_result_callback = instance_double 'Proc'
+    expect(on_message_result_callback).to receive(:call).with('sequence', [5], nil)
+    session.on_message_result { |*args| on_message_result_callback.call(*args) }
+
     recurring_line = "#{subscription.id},1|test"
 
     expect(session).to receive(:control_request).with(:destroy) { recurring_line = nil }
 
     expect(stream_connection).to receive(:read_line).and_return("#{subscription.id},1|test")
     expect(stream_connection).to receive(:read_line).and_return('invalid data')
+    expect(stream_connection).to receive(:read_line).and_return('MSG,sequence,5,DONE')
     allow(stream_connection).to receive(:read_line) { recurring_line }
     expect(stream_connection).to receive(:error).and_return(nil)
 
     session.instance_variable_set :@subscriptions, [subscription]
     expect(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
     expect(subscription).to receive(:process_stream_data).with('invalid data').and_return(false)
+    expect(subscription).to receive(:process_stream_data).with('MSG,sequence,5,DONE').and_return(false)
     allow(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
 
     expect do
@@ -69,8 +75,6 @@ describe Lightstreamer::Session do
     expect(subscription).to receive(:stop)
 
     session.remove_subscription subscription
-
-    expect { session.remove_subscription subscription }.to raise_error(ArgumentError)
   end
 
   context 'with an active stream connection' do
@@ -88,6 +92,22 @@ describe Lightstreamer::Session do
       expect(session).to receive(:control_request).with(:constrain, LS_requested_max_bandwidth: 15)
       session.requested_maximum_bandwidth = 15
       expect(session.requested_maximum_bandwidth).to eq(15)
+    end
+
+    it 'sends a synchronous message' do
+      expect(Lightstreamer::PostRequest).to receive(:execute)
+        .with('http://a.com/lightstreamer/send_message.txt', LS_session: 'session', LS_message: 'message')
+
+      session.send_message 'message'
+    end
+
+    it 'sends an synchronous message' do
+      expect(Lightstreamer::PostRequest).to receive(:execute)
+        .with('http://a.com/lightstreamer/send_message.txt', LS_session: 'session', LS_message: 'message',
+                                                             LS_sequence: 'sequence', LS_msg_prog: 1,
+                                                             LS_max_wait: 500)
+
+      session.send_message 'message', async: true, sequence: 'sequence', number: 1, max_wait: 500
     end
 
     it 'sends control requests' do
