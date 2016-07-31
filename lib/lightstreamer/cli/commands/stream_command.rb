@@ -32,9 +32,7 @@ module Lightstreamer
       private
 
       def create_session
-        @session = Lightstreamer::Session.new server_url: options[:server_url], username: options[:username],
-                                              password: options[:password], adapter_set: options[:adapter_set],
-                                              requested_maximum_bandwidth: options[:requested_maximum_bandwidth]
+        @session = Lightstreamer::Session.new session_options
         @session.connect
         @session.on_message_result(&method(:on_message_result))
 
@@ -48,6 +46,11 @@ module Lightstreamer
         subscription.on_overflow(&method(:on_overflow))
 
         subscription.start
+      end
+
+      def session_options
+        { server_url: options[:server_url], username: options[:username], password: options[:password],
+          adapter_set: options[:adapter_set], requested_maximum_bandwidth: options[:requested_maximum_bandwidth] }
       end
 
       def subscription_options
