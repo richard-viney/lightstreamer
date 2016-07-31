@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.7 — Unreleased
+### 0.7 — July 31, 2016
 
 - Refactored subscription handling to be more object-oriented, subscriptions are now created using
   `Lightstreamer::Session#build_subscription` and there are new `#start`, `#stop` and `#unsilence` methods on
