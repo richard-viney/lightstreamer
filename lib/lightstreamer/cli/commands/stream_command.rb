@@ -14,6 +14,7 @@ module Lightstreamer
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
       option :mode, enum: %w(distinct merge), default: :merge, desc: 'The operation mode'
       option :selector, desc: 'The selector for table items'
+      option :snapshot, type: :boolean, desc: 'Whether to send snapshot data for the items'
       option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'
 
       def stream
@@ -44,6 +45,7 @@ module Lightstreamer
 
         subscription.on_data(&method(:on_data))
         subscription.on_overflow(&method(:on_overflow))
+        subscription.on_end_of_snapshot(&method(:on_end_of_snapshot))
 
         subscription.start
       end
@@ -55,7 +57,8 @@ module Lightstreamer
 
       def subscription_options
         { items: options[:items], fields: options[:fields], mode: options[:mode], adapter: options[:adapter],
-          maximum_update_frequency: options[:maximum_update_frequency], selector: options[:selector] }
+          maximum_update_frequency: options[:maximum_update_frequency], selector: options[:selector],
+          snapshot: options[:snapshot] }
       end
 
       def on_data(_subscription, item_name, _item_data, new_values)
@@ -68,6 +71,10 @@ module Lightstreamer
 
       def on_message_result(sequence, numbers, error)
         @queue.push "Message result for #{sequence}#{numbers} = #{error ? error.class : 'Done'}"
+      end
+
+      def on_end_of_snapshot(_subscription, item_name)
+        @queue.push "End of snapshot for item #{item_name}"
       end
     end
   end

@@ -17,10 +17,10 @@ module Lightstreamer
       # Attempts to parses the specified line as an overflow message for the given table and items and returns an
       # instance of {OverflowMessage} on success, or `nil` on failure.
       def parse(line, table_id, items)
-        message = new
-
         match = line.match table_regexp(table_id)
         return unless match
+
+        message = new
 
         message.item_index = match.captures[0].to_i - 1
         return unless message.item_index < items.size

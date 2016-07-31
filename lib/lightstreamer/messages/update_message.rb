@@ -17,10 +17,10 @@ module Lightstreamer
       # Attempts to parses the specified line as an update message for the given table, items, and fields, and returns
       # an instance of {UpdateMessage} on success, or `nil` on failure.
       def parse(line, table_id, items, fields)
-        message = new
-
         match = line.match table_regexp(table_id, fields)
         return unless match
+
+        message = new
 
         message.item_index = match.captures[0].to_i - 1
         return unless message.item_index < items.size

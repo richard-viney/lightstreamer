@@ -12,6 +12,7 @@
 - Added support for setting initial subscription data
 - Added support for changing a subscription's requested update frequency after it has been started
 - Added support for setting and altering the session's requested maximum bandwidth
+- Added support for requesting snapshots on subscriptions
 - Added `Lightstreamer::Session#session_id` to query the session ID
 - Added `Lightstreamer::Subscription#active` to query whether the subscription is active and streaming data
 - Stream connection bind requests are now sent to the custom control address if one was specified in the stream

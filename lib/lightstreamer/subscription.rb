@@ -85,6 +85,13 @@ module Lightstreamer
     # @option options [Boolean] :silent Whether the subscription should be started in silent mode. In silent mode the
     #                 subscription is initiated on the server and begins buffering incoming data, however this data will
     #                 not be sent to the client for processing until {#unsilence} is called.
+    # @option options [Boolean, Fixnum] :snapshot Controls whether the server should send a snapshot of this
+    #                 subscription's items. If `false` then the server does not send snapshot information (this is the
+    #                 default). If `true` then the server will send snapshot information if it's available. If this
+    #                 subscription's {#mode} is `:distinct` then `:snapshot` can also be an integer specifying the
+    #                 number of events the server should send as part of the snapshot. If this latter option is used
+    #                 then any callbacks registered with {#on_end_of_snapshot} will be called once the snapshot for each
+    #                 item is complete.
     def start(options = {})
       session.control_request(*start_control_request_args(options)) unless @active
       @active = true
@@ -100,7 +107,8 @@ module Lightstreamer
       operation = options[:silent] ? :add_silent : :add
 
       options = { LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items, LS_schema: fields, LS_data_adapter: adapter,
-                  LS_requested_max_frequency: maximum_update_frequency, LS_selector: selector }
+                  LS_requested_max_frequency: maximum_update_frequency, LS_selector: selector,
+                  LS_snapshot: options.fetch(:snapshot, false) }
 
       [operation, options]
     end
@@ -109,7 +117,7 @@ module Lightstreamer
     # If this subscription was not started in silent mode then this method has no effect. If an error occurs then a
     # {LightstreamerError} subclass will be raised.
     def unsilence
-      session.control_request :start, LS_table: id if @active
+      session.control_request :start, LS_table: id
     end
 
     # Stops streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
@@ -156,9 +164,18 @@ module Lightstreamer
       @data_mutex.synchronize { @callbacks[:on_overflow] << callback }
     end
 
+    # Adds the passed block to the list of callbacks that will be run when the server reports an end-of-snapshot
+    # notification for this subscription. The block will be called on a worker thread and so the code that is run by the
+    # block must be thread-safe. The arguments passed to the block are `|subscription, item_name|`.
+    #
+    # @param [Proc] callback The callback that is to be run when an overflow is reported for this subscription.
+    def on_end_of_snapshot(&callback)
+      @data_mutex.synchronize { @callbacks[:on_end_of_snapshot] << callback }
+    end
+
     # Removes all {#on_data} and {#on_overflow} callbacks present on this subscription.
     def clear_callbacks
-      @data_mutex.synchronize { @callbacks = { on_data: [], on_overflow: [] } }
+      @data_mutex.synchronize { @callbacks = { on_data: [], on_overflow: [], on_end_of_snapshot: [] } }
     end
 
     # Returns a copy of the current data of one of this subscription's items.
@@ -198,6 +215,7 @@ module Lightstreamer
     def process_stream_data(line)
       return true if process_update_message UpdateMessage.parse(line, id, items, fields)
       return true if process_overflow_message OverflowMessage.parse(line, id, items)
+      return true if process_end_of_snapshot_message EndOfSnapshotMessage.parse(line, id, items)
     end
 
     private
@@ -212,8 +230,6 @@ module Lightstreamer
       return unless message
 
       @data_mutex.synchronize { process_new_values message.item_index, message.values }
-
-      true
     end
 
     def process_new_values(item_index, new_values)
@@ -222,17 +238,23 @@ module Lightstreamer
       data.replace(new_values) if mode == :distinct
       data.merge!(new_values) if mode == :merge
 
-      @callbacks.fetch(:on_data).each { |callback| callback.call self, @items[item_index], data, new_values }
+      run_callbacks :on_data, @items[item_index], data, new_values
     end
 
     def process_overflow_message(message)
       return unless message
 
-      item_name = @items[message.item_index]
+      @data_mutex.synchronize { run_callbacks :on_overflow, @items[message.item_index], message.overflow_size }
+    end
 
-      @data_mutex.synchronize do
-        @callbacks.fetch(:on_overflow).each { |callback| callback.call self, item_name, message.overflow_size }
-      end
+    def process_end_of_snapshot_message(message)
+      return unless message
+
+      @data_mutex.synchronize { run_callbacks :on_end_of_snapshot, @items[message.item_index] }
+    end
+
+    def run_callbacks(callback_type, *args)
+      @callbacks.fetch(callback_type).each { |callback| callback.call self, *args }
 
       true
     end

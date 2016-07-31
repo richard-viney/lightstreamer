@@ -30,7 +30,7 @@ describe Lightstreamer::Subscription do
   it 'starts and stops a subscription' do
     expect(session).to receive(:control_request)
       .with(:add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_schema: [:field1, :field2],
-                  LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_selector: nil)
+                  LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_selector: nil, LS_snapshot: false)
     expect(session).to receive(:control_request).with(:delete, LS_table: subscription.id)
 
     subscription.start
@@ -40,10 +40,11 @@ describe Lightstreamer::Subscription do
   it 'starts and unsilences a silent subscription' do
     expect(session).to receive(:control_request)
       .with(:add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_selector: nil,
-                         LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0)
+                         LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+                         LS_snapshot: true)
     expect(session).to receive(:control_request).with(:start, LS_table: subscription.id)
 
-    subscription.start silent: true
+    subscription.start silent: true, snapshot: true
     subscription.unsilence
   end
 
@@ -62,10 +63,12 @@ describe Lightstreamer::Subscription do
   it 'invokes callbacks when new data arrives' do
     data_calls = []
     overflow_calls = []
+    end_of_snapshot_calls = []
 
     subscription.on_data { |*args| data_calls << args }
     subscription.on_data { |*args| data_calls << args }
     subscription.on_overflow { |*args| overflow_calls << args }
+    subscription.on_end_of_snapshot { |*args| end_of_snapshot_calls << args }
 
     expect(subscription.process_stream_data("#{subscription.id},1|a|b")).to be true
     expect(subscription.process_stream_data("#{subscription.id},2|c|")).to be true
@@ -73,6 +76,8 @@ describe Lightstreamer::Subscription do
     expect(subscription.process_stream_data("#{subscription.id},1,OV123")).to be true
     expect(subscription.process_stream_data("#{subscription.id},3,OV1")).to be_falsey
     expect(subscription.process_stream_data('0,3|d|e')).to be_falsey
+    expect(subscription.process_stream_data("#{subscription.id},1,EOS")).to be true
+    expect(subscription.process_stream_data("#{subscription.id},2,EOS")).to be true
 
     expect(data_calls.count).to eq(4)
     expect(data_calls[0]).to eq([subscription, :item1, { field1: 'a', field2: 'b' }, { field1: 'a', field2: 'b' }])
@@ -83,6 +88,9 @@ describe Lightstreamer::Subscription do
     expect(overflow_calls.count).to eq(2)
     expect(overflow_calls[0]).to eq([subscription, :item2, 5])
     expect(overflow_calls[1]).to eq([subscription, :item1, 123])
+
+    expect(end_of_snapshot_calls[0]).to eq([subscription, :item1])
+    expect(end_of_snapshot_calls[1]).to eq([subscription, :item2])
   end
 
   it 'clears callbacks' do

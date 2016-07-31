@@ -21,11 +21,12 @@ describe Lightstreamer::CLI::Main do
     expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
     expect(session).to receive(:build_subscription)
       .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil,
-            selector: nil)
+            selector: nil, snapshot: nil)
       .and_return(subscription)
 
     expect(subscription).to receive(:on_data)
     expect(subscription).to receive(:on_overflow)
+    expect(subscription).to receive(:on_end_of_snapshot)
     expect(subscription).to receive(:start)
 
     expect(Queue).to receive(:new).and_return(queue)
@@ -44,7 +45,7 @@ describe Lightstreamer::CLI::Main do
     cli.send :on_data, subscription, 'item', {}, field1: '1', field2: '2'
   end
 
-  it 'formats overflow notifcations correctly' do
+  it 'formats overflow notifications correctly' do
     cli.instance_variable_set :@queue, queue
     expect(queue).to receive(:push).with('Overflow of size 3 on item item')
 
@@ -58,5 +59,12 @@ describe Lightstreamer::CLI::Main do
 
     cli.send :on_message_result, 'name', [1], nil
     cli.send :on_message_result, 'name', [2, 3], Lightstreamer::Errors::IllegalMessageError.new
+  end
+
+  it 'formats end-of-snapshot notifications correctly' do
+    cli.instance_variable_set :@queue, queue
+    expect(queue).to receive(:push).with('End of snapshot for item item')
+
+    cli.send :on_end_of_snapshot, subscription, 'item'
   end
 end

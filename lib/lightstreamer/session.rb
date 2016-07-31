@@ -209,9 +209,9 @@ module Lightstreamer
     # arrives. The block will be called on a worker thread and so the code that is run by the block must be thread-safe.
     # The arguments passed to the block are `|sequence, numbers, error|`.
     #
-    # @param [Proc] block The callback that is to be run.
-    def on_message_result(&block)
-      @on_message_result_callbacks << block
+    # @param [Proc] callback The callback that is to be run.
+    def on_message_result(&callback)
+      @on_message_result_callbacks << callback
     end
 
     # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.
