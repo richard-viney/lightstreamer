@@ -9,8 +9,8 @@ module Lightstreamer
     attr_accessor :sequence
 
     # The message number(s) this message outcome is for. There will always be exactly one entry in this array except in
-    # the case where {#error} is a {MessagesSkippedByTimeoutError} in which case there may be more than one entry if
-    # multiple messages were skipped.
+    # the case where {#error} is a {Errors::MessagesSkippedByTimeoutError} in which case there may be more than one
+    # entry if multiple messages were skipped.
     #
     # @return [Array<Fixnum>]
     attr_accessor :numbers
