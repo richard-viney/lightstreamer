@@ -2,7 +2,7 @@ describe Lightstreamer::CLI::Main do
   let(:cli) do
     Lightstreamer::CLI::Main.new [], server_url: 'http://a.com', username: 'username', password: 'password',
                                      adapter_set: 'adapter-set', requested_maximum_bandwidth: nil, adapter: 'adapter',
-                                     items: ['item'], fields: ['field'], mode: :merge
+                                     items: ['item'], fields: ['field'], mode: :merge, polling_enabled: false
   end
 
   let(:session) { instance_double 'Lightstreamer::Session' }
@@ -12,7 +12,7 @@ describe Lightstreamer::CLI::Main do
   it 'prints stream data' do
     expect(Lightstreamer::Session).to receive(:new)
       .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set',
-            requested_maximum_bandwidth: nil)
+            requested_maximum_bandwidth: nil, polling_enabled: false)
       .and_return(session)
 
     expect(session).to receive(:on_message_result)

@@ -95,8 +95,8 @@ module Lightstreamer
     end
 
     def create_new_stream
-      params = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: @session.username,
-                 LS_password: @session.password, LS_requested_max_bandwidth: @session.requested_maximum_bandwidth }
+      params = build_params LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: @session.username,
+                            LS_password: @session.password
 
       params[:LS_adapter_set] = @session.adapter_set if @session.adapter_set
 
@@ -107,10 +107,21 @@ module Lightstreamer
     end
 
     def bind_to_existing_stream
-      params = { LS_session: @session_id, LS_requested_max_bandwidth: @session.requested_maximum_bandwidth }
+      params = build_params LS_session: @session_id
 
       url = URI.join(control_address, '/lightstreamer/bind_session.txt').to_s
       execute_stream_post_request url, connect_timeout: 15, query: params
+    end
+
+    def build_params(params)
+      params[:LS_requested_max_bandwidth] = @session.requested_maximum_bandwidth
+
+      if @session.polling_enabled
+        params[:LS_polling] = true
+        params[:LS_polling_millis] = 15_000
+      end
+
+      params
     end
 
     def execute_stream_post_request(url, options)
@@ -130,6 +141,8 @@ module Lightstreamer
     end
 
     def process_stream_line(line)
+      return if line =~ /^(PROBE|Preamble:.*)$/
+
       if @header
         process_header_line line
       else
@@ -151,18 +164,17 @@ module Lightstreamer
       @error = @header.error
 
       return if header_incomplete
+      @header = nil
 
       signal_connect_result_ready
-
-      @header = nil
     end
 
     def process_body_line(line)
-      if line =~ /^LOOP/
+      if line =~ /^LOOP( \d+|)$/
         @loop = true
       elsif line =~ /^END/
         @error = Errors::SessionEndError.new line[4..-1]
-      elsif line !~ /^(PROBE|Preamble:.*)$/
+      elsif !line.empty?
         @queue.push line
       end
     end

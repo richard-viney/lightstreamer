@@ -8,7 +8,9 @@ module Lightstreamer
       option :username, desc: 'The username for the session'
       option :password, desc: 'The password for the session'
       option :adapter_set, desc: 'The name of the adapter set for the session'
+      option :polling_enabled, type: :boolean, desc: 'Whether to poll instead of using long-running stream connections'
       option :requested_maximum_bandwidth, type: :numeric, desc: 'The requested maximum bandwidth, in kbps'
+
       option :adapter, desc: 'The name of the data adapter to stream data from'
       option :items, type: :array, required: true, desc: 'The names of the item(s) to stream'
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
@@ -52,7 +54,8 @@ module Lightstreamer
 
       def session_options
         { server_url: options[:server_url], username: options[:username], password: options[:password],
-          adapter_set: options[:adapter_set], requested_maximum_bandwidth: options[:requested_maximum_bandwidth] }
+          adapter_set: options[:adapter_set], requested_maximum_bandwidth: options[:requested_maximum_bandwidth],
+          polling_enabled: options[:polling_enabled] }
       end
 
       def subscription_options

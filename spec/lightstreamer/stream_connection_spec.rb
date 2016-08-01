@@ -1,7 +1,7 @@
 describe Lightstreamer::StreamConnection do
   let(:session) do
-    instance_double 'Lightstreamer::Session', server_url: 'http://test.com', username: 'username',
-                                              password: 'password', adapter_set: 'set', requested_maximum_bandwidth: 2.5
+    Lightstreamer::Session.new server_url: 'http://test.com', username: 'username', password: 'password',
+                               adapter_set: 'set', polling_enabled: false, requested_maximum_bandwidth: 2.5
   end
 
   let(:create_args) do
@@ -32,16 +32,18 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.connected?).to be false
   end
 
-  it 'creates and runs a stream connection which rebinds itself in response to a LOOP message' do
+  it 'creates and runs a stream connection which rebinds itself in polling mode in response to a LOOP message' do
     stream_thread = nil
 
     expect(Excon).to receive(:post).with(*create_args) do |_url, params|
       stream_thread = Thread.current
+      session.polling_enabled = true
       params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\none\r\ntwo\r\nLOOP\r\n", nil, nil
     end
 
     bind_args = ['http://a.com/lightstreamer/bind_session.txt',
-                 hash_including(query: { LS_session: 'A', LS_requested_max_bandwidth: 2.5 }, connect_timeout: 15)]
+                 hash_including(query: { LS_session: 'A', LS_requested_max_bandwidth: 2.5, LS_polling: true,
+                                         LS_polling_millis: 15_000 }, connect_timeout: 15)]
     expect(Excon).to receive(:post).with(*bind_args) do |_url, params|
       params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\nthree\r\nfour\r\n", nil, nil
       sleep

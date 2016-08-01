@@ -34,6 +34,15 @@ module Lightstreamer
     # @return [Float]
     attr_reader :requested_maximum_bandwidth
 
+    # Whether polling mode is enabled. By default long-running HTTP connections will be used to stream incoming data,
+    # but if polling is enabled then repeated short polling requests will be used instead. Polling may work better if
+    # there is intermediate buffering on the network that affects timely delivery of data on long-running streaming
+    # connections. The polling mode for a connected session can be changed by setting {#polling_enabled} and then
+    # calling {#force_rebind}.
+    #
+    # @return [Boolean]
+    attr_accessor :polling_enabled
+
     # Initializes this new Lightstreamer session with the passed options.
     #
     # @param [Hash] options The options to create the session with.
@@ -43,6 +52,8 @@ module Lightstreamer
     # @option options [String] :adapter_set The name of the adapter set to request from the server.
     # @option options [Float] :requested_maximum_bandwidth. The server-side bandwidth constraint on data usage,
     #                 expressed in kbps. Defaults to zero which means no limit is applied.
+    # @option options [Boolean] :polling_enabled Whether polling mode is enabled. See {#polling_enabled} for details.
+    #                 Defaults to `false`.
     def initialize(options = {})
       @subscriptions = []
       @subscriptions_mutex = Mutex.new
@@ -52,6 +63,7 @@ module Lightstreamer
       @password = options[:password]
       @adapter_set = options[:adapter_set]
       @requested_maximum_bandwidth = options[:requested_maximum_bandwidth].to_f
+      @polling_enabled = options[:polling_enabled]
 
       @on_message_result_callbacks = []
     end
@@ -105,7 +117,9 @@ module Lightstreamer
     # Requests that the Lightstreamer server terminate the currently active stream connection and require that a new
     # stream connection be initiated by the client. The Lightstreamer server requires closure and re-establishment of
     # the stream connection periodically during normal operation, this method just allows such a reconnection to be
-    # requested explicitly by the client. If an error occurs then a {LightstreamerError} subclass will be raised.
+    # requested explicitly by the client. This is particularly useful after {#polling_enabled} has been changed because
+    # it forces the stream connection to rebind using the new setting. If an error occurs then a {LightstreamerError}
+    # subclass will be raised.
     def force_rebind
       return unless @stream_connection
 

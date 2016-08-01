@@ -2,7 +2,7 @@
 
 ### 0.8 — Unreleased
 
-- 
+- Added support for Lightstreamer's polling mode and switching an active session between streaming and polling
 
 ### 0.7 — July 31, 2016
 
