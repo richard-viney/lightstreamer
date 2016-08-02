@@ -1,6 +1,9 @@
 module Lightstreamer
   # This class is responsible for managing a Lightstreamer session, and along with the {Subscription} class forms the
-  # primary API for working with Lightstreamer.
+  # primary API for working with Lightstreamer. Start by calling {#initialize} with the desired server URL and other
+  # options, then call {#connect} to initiate the session. Once connected create subscriptions using
+  # {#build_subscription} and then start streaming data by calling {Subscription#start} or {#bulk_subscription_start}.
+  # See the {Subscription} class for details on how to consume the streaming data as it arrives.
   class Session
     # The URL of the Lightstreamer server to connect to. Set by {#initialize}.
     #
@@ -135,7 +138,7 @@ module Lightstreamer
     # @option options [Array] :fields The names of the fields to subscribe to on the items. Required.
     # @option options [:command, :distinct, :merge, :raw] :mode The operation mode of the subscription. Required.
     # @option options [String] :adapter The name of the data adapter from this session's adapter set that should be
-    #                 used. If `nil` then the default data adapter will be used.
+    #                 used. If this is not set or is set to `nil` then the default data adapter will be used.
     # @option options [String] :selector The selector for table items. Optional.
     # @option options [Float, :unfiltered] :maximum_update_frequency The maximum number of updates the subscription
     #                 should receive per second. Defaults to zero which means there is no limit on the update frequency.
@@ -163,10 +166,11 @@ module Lightstreamer
     end
 
     # This method performs a bulk {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on
-    # each of them individually would also work but requires a separate POST request to be sent for every subscription.
-    # This request starts all of the passed subscriptions in a single POST request which is significantly faster for
-    # a large number of subscriptions. The return value is an array with one entry per subscription and indicates the
-    # error state returned by the server for that subscription's start request, or `nil` if no error occurred.
+    # each subscription individually would also work but requires a separate POST request to be sent for every
+    # subscription, whereas this request starts all of the passed subscriptions in a single POST request which is
+    # significantly faster for a large number of subscriptions. The return value is an array with one entry per
+    # subscription and indicates the error state returned by the server for that subscription's start request, or `nil`
+    # if no error occurred.
     #
     # @param [Array<Subscription>] subscriptions The subscriptions to start.
     #
@@ -197,15 +201,16 @@ module Lightstreamer
     # By default the message will be sent synchronously, i.e. the message will be processed by the server and if an
     # error occurs a {LightstreamerError} subclass will be raised immediately. However, if the `:async` option is true
     # then the message will be sent asynchronously, and the result of the message send will be reported to all callbacks
-    # that have been registered via {#on_message_result}.
+    # that have been registered via {#on_message_result}. If `:async` is set to `true` then the `:sequence` and
+    # `:number` options must also be specified.
     #
     # @param [String] message The message to send to the Lightstreamer server.
     # @param [Hash] options The options that control messages sent asynchronously.
     # @option options [Boolean] :async Whether to send the message asynchronously. Defaults to `false`.
     # @option options [String] :sequence The alphanumeric identifier that identifies a subset of messages that are to
-    #                 be processed in sequence based on the `:number` given to them. If the special `UNORDERED_MESSAGES`
-    #                 sequence is used then the associated messages are processed immediately, possibly concurrently,
-    #                 with no ordering constraint.
+    #                 be processed in sequence based on the `:number` given to them. If the special
+    #                 `"UNORDERED_MESSAGES"` sequence is used then the associated messages are processed immediately,
+    #                 possibly concurrently, with no ordering constraint.
     # @option options [Fixnum] :number The progressive number of this message within its sequence. Should start at 1.
     # @option options [Float] :max_wait The maximum time the server can wait before processing this message if one or
     #                 more of the preceding messages in the same sequence have not been received. If not specified then
@@ -221,16 +226,17 @@ module Lightstreamer
       PostRequest.execute url, query
     end
 
-    # Adds the passed block to the list of callbacks that will be run when the outcome of an asynchronous message send
-    # arrives. The block will be called on a worker thread and so the code that is run by the block must be thread-safe.
-    # The arguments passed to the block are `|sequence, numbers, error|`.
+    # Adds the passed block to the list of callbacks that will be run when the outcome of one or more asynchronous
+    # message sends arrive. The block will be called on a worker thread and so the code that is run by the block must be
+    # thread-safe. The arguments passed to the block are `|sequence, numbers, error|`.
     #
     # @param [Proc] callback The callback that is to be run.
     def on_message_result(&callback)
       @on_message_result_callbacks << callback
     end
 
-    # Sends a request to the control connection. If an error occurs then a {LightstreamerError} subclass will be raised.
+    # Sends a request to this session's control connection. If an error occurs then a {LightstreamerError} subclass will
+    # be raised.
     #
     # @param [Symbol] operation The control operation to perform.
     # @param [Hash] options The options to send with the control request.

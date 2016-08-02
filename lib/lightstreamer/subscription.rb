@@ -25,8 +25,8 @@ module Lightstreamer
     # @return [:command, :distinct, :merge, :raw]
     attr_reader :mode
 
-    # The name of the data adapter from the Lightstreamer session's adapter set that should be used, or `nil` to use the
-    # default data adapter.
+    # The name of the data adapter from the Lightstreamer session's adapter set to use, or `nil` to use the default
+    # data adapter.
     #
     # @return [String, nil]
     attr_reader :data_adapter
@@ -88,12 +88,13 @@ module Lightstreamer
     #                 subscription is initiated on the server and begins buffering incoming data, however this data will
     #                 not be sent to the client for processing until {#unsilence} is called.
     # @option options [Boolean, Fixnum] :snapshot Controls whether the server should send a snapshot of this
-    #                 subscription's items. If `false` then the server does not send snapshot information (this is the
-    #                 default). If `true` then the server will send snapshot information if it's available. If this
-    #                 subscription's {#mode} is `:distinct` then `:snapshot` can also be an integer specifying the
-    #                 number of events the server should send as part of the snapshot. If this latter option is used
-    #                 then any callbacks registered with {#on_end_of_snapshot} will be called once the snapshot for each
-    #                 item is complete. This option is ignored when {#mode} is `:raw`.
+    #                 subscription's items. The default value is `false` which means then the server will not send
+    #                 snapshot information. If set to `true` then the server will send snapshot information if it is
+    #                 available. If this subscription's {#mode} is `:distinct` then `:snapshot` can also be an integer
+    #                 specifying the number of events the server should send as part of the snapshot. If this latter
+    #                 option is used, or {#mode} is `:command`, then any callbacks registered with {#on_end_of_snapshot}
+    #                 will be called once the snapshot for each item is complete. This option is ignored when {#mode} is
+    #                 `:raw`.
     def start(options = {})
       return if @active
 
@@ -117,8 +118,8 @@ module Lightstreamer
       [operation, options]
     end
 
-    # Unsilences this subscription if it was initially started in silent mode (by passing `silent: true` to {#start}).
-    # If this subscription was not started in silent mode then this method has no effect. If an error occurs then a
+    # Unsilences this subscription if it was initially started in silent mode by passing `silent: true` to {#start}. If
+    # this subscription was not started in silent mode then this method has no effect. If an error occurs then a
     # {LightstreamerError} subclass will be raised.
     def unsilence
       session.control_request :start, LS_table: id
@@ -152,8 +153,8 @@ module Lightstreamer
 
     # Returns a copy of the current data of one of this subscription's items. If {#mode} is `:merge` then the returned
     # object will be a hash of the item's state, if it is `:command` then an array of row data for the item will be
-    # returned, and if it is `:distinct` or :raw` then just the most recent update received for the item will be
-    # returned. The return value will be `nil` if no data for the item has been set or received.
+    # returned, and if it is `:distinct` or `:raw` then just the most recent update received for the item will be
+    # returned. The return value will be `nil` if no data for the item has been set or been received.
     #
     # @param [String] item_name The name of the item to return the current data for.
     #
