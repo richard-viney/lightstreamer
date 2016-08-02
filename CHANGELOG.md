@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.8 — Unreleased
+### 0.8 — August 2, 2016
 
 - Added support for Lightstreamer's `COMMAND` and `RAW` subscription modes
 - Added support for Lightstreamer's polling mode and switching an active session between streaming and polling
