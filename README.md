@@ -8,8 +8,21 @@
 [![Documentation][documentation-badge]][documentation-link]
 [![License][license-badge]][license-link]
 
-Easily interface with a Lightstreamer service from Ruby. Written against the
+Easily interface with a Lightstreamer service from Ruby with this gem, either directly through code or by using the
+provided command-line client. Written against the
 [official API specification](http://www.lightstreamer.com/docs/client_generic_base/Network%20Protocol%20Tutorial.pdf).
+
+Includes support for:
+
+- Streaming and polling connections
+- The four Lightstreamer subscription modes: `command`, `distinct`, `merge` and `raw`
+- Automatic management of table content when in `command` mode
+- Silent subscriptions
+- Item snapshots
+- Unfiltered subscriptions and asynchronous overflow handling
+- Bulk subscription creation
+- Synchronous and asynchronous message sending
+- Detailed error reporting and error handling callbacks
 
 ## License
 
@@ -30,8 +43,8 @@ The two primary classes that make up the public API are:
 - [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Session)
 - [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Subscription)
 
-The following code snippet demonstrates how to setup a Lightstreamer session, a subscription, then print streaming
-output as it comes in.
+The following code snippet demonstrates how to create a Lightstreamer session, build a subscription, then print
+streaming output as it arrives.
 
 ```ruby
 require 'lightstreamer'
@@ -57,8 +70,8 @@ subscription.on_data do |subscription, item_name, item_data, new_data|
   queue.push item_data
 end
 
-# Start streaming data for the subscription
-subscription.start
+# Start streaming data for the subscription and request an initial snapshot
+subscription.start snapshot: true
 
 # Loop printing out new data as soon as it becomes available on the queue
 loop do
@@ -75,11 +88,12 @@ subscription, then print streaming output from the server as it becomes availabl
 To print streaming data from the demo server run the following command:
 
 ```
-lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO --data-adapter QUOTE_ADAPTER \
-              --items item1 item2 item3 item4 item5 --fields ask bid stock_name --mode merge --snapshot
+lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO \
+              --data-adapter QUOTE_ADAPTER --mode merge --snapshot \
+              --items item1 item2 item3 item4 item5 --fields ask bid stock_name
 ```
 
-To see a full list of available options for the command-line client run the following command:
+To see the full list of available options for the command-line client run the following command:
 
 ```
 lightstreamer help stream
