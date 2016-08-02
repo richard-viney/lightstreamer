@@ -266,8 +266,7 @@ module Lightstreamer
       end
     end
 
-    # Processes a single line of incoming stream data by passing it to all the subscriptions until one
-    # successfully processes it. This method is always run on the processing thread.
+    # Processes a single line of incoming stream data. This method is always run on the processing thread.
     def process_stream_line(line)
       return if @subscriptions.any? { |subscription| subscription.process_stream_data line }
       return if process_send_message_outcome line
@@ -275,8 +274,7 @@ module Lightstreamer
       warn "Lightstreamer: unprocessed stream data '#{line}'"
     end
 
-    # Attempts to process the passed line as a send message outcome message, and if is such a message then the
-    # registered callbacks are run.
+    # Attempts to process the passed line as a send message outcome message.
     def process_send_message_outcome(line)
       outcome = SendMessageOutcomeMessage.parse line
       return unless outcome

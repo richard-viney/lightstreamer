@@ -161,7 +161,7 @@ module Lightstreamer
 
       # Initializes this session end error with the specified cause code.
       #
-      # @param [Session?] cause_code See {#cause_code} for details.
+      # @param [String, Fixnum, nil] cause_code See {#cause_code} for details.
       def initialize(cause_code)
         @cause_code = cause_code && cause_code.to_i
         super()

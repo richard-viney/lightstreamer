@@ -66,8 +66,8 @@ module Lightstreamer
     end
 
     # Reads the next line of streaming data. If the streaming thread is alive then this method blocks the calling thread
-    # until a line of data is available. If the streaming thread is not active then any unconsumed lines will be
-    # returned and after that the return value will be `nil`.
+    # until a line of data is available or the streaming thread terminates for any reason. If the streaming thread is
+    # not active then any unconsumed lines will be returned and after that the return value will be `nil`.
     #
     # @return [String, nil]
     def read_line
@@ -172,7 +172,7 @@ module Lightstreamer
     def process_body_line(line)
       if line =~ /^LOOP( \d+|)$/
         @loop = true
-      elsif line =~ /^END/
+      elsif line =~ /^END( \d+|)/
         @error = Errors::SessionEndError.new line[4..-1]
       elsif !line.empty?
         @queue.push line
