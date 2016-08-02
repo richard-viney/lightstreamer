@@ -133,7 +133,7 @@ module Lightstreamer
     # @param [Hash] options The options to create the subscription with.
     # @option options [Array] :items The names of the items to subscribe to. Required.
     # @option options [Array] :fields The names of the fields to subscribe to on the items. Required.
-    # @option options [:distinct, :merge] :mode The operation mode of the subscription. Required.
+    # @option options [:command, :distinct, :merge, :raw] :mode The operation mode of the subscription. Required.
     # @option options [String] :adapter The name of the data adapter from this session's adapter set that should be
     #                 used. If `nil` then the default data adapter will be used.
     # @option options [String] :selector The selector for table items. Optional.

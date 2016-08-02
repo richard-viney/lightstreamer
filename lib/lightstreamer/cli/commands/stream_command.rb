@@ -11,10 +11,10 @@ module Lightstreamer
       option :polling_enabled, type: :boolean, desc: 'Whether to poll instead of using long-running stream connections'
       option :requested_maximum_bandwidth, type: :numeric, desc: 'The requested maximum bandwidth, in kbps'
 
-      option :adapter, desc: 'The name of the data adapter to stream data from'
+      option :data_adapter, desc: 'The name of the data adapter to stream data from'
       option :items, type: :array, required: true, desc: 'The names of the item(s) to stream'
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
-      option :mode, enum: %w(distinct merge), default: :merge, desc: 'The operation mode'
+      option :mode, enum: %w(command distinct merge raw), desc: 'The operation mode'
       option :selector, desc: 'The selector for table items'
       option :snapshot, type: :boolean, desc: 'Whether to send snapshot data for the items'
       option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'
@@ -59,13 +59,13 @@ module Lightstreamer
       end
 
       def subscription_options
-        { items: options[:items], fields: options[:fields], mode: options[:mode], adapter: options[:adapter],
+        { items: options[:items], fields: options[:fields], mode: options[:mode], data_adapter: options[:data_adapter],
           maximum_update_frequency: options[:maximum_update_frequency], selector: options[:selector],
           snapshot: options[:snapshot] }
       end
 
-      def on_data(_subscription, item_name, _item_data, new_values)
-        @queue.push "#{item_name} - #{new_values.map { |key, value| "#{key}: #{value}" }.join ', '}"
+      def on_data(_subscription, item_name, _item_data, new_data)
+        @queue.push "#{item_name} - #{new_data.map { |key, value| "#{key}: #{value}" }.join ', '}"
       end
 
       def on_overflow(_subscription, item_name, overflow_size)

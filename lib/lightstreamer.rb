@@ -15,6 +15,7 @@ require 'lightstreamer/stream_buffer'
 require 'lightstreamer/stream_connection'
 require 'lightstreamer/stream_connection_header'
 require 'lightstreamer/subscription'
+require 'lightstreamer/subscription_item_data'
 require 'lightstreamer/version'
 
 # This module contains all the code for the Lightstreamer gem. See `README.md` to get started with using this gem.

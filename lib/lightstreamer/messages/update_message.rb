@@ -8,10 +8,10 @@ module Lightstreamer
     # @return [Fixnum]
     attr_accessor :item_index
 
-    # The field values specified by this update message.
+    # The field data specified by this update message.
     #
     # @return [Array]
-    attr_accessor :values
+    attr_accessor :data
 
     class << self
       # Attempts to parses the specified line as an update message for the given table, items, and fields, and returns
@@ -25,7 +25,7 @@ module Lightstreamer
         message.item_index = match.captures[0].to_i - 1
         return unless message.item_index < items.size
 
-        message.values = parse_values match.captures[1..-1], fields
+        message.data = parse_field_values match.captures[1..-1], fields
 
         message
       end
@@ -36,13 +36,13 @@ module Lightstreamer
         Regexp.new "^#{table_id},(\\d+)#{'\|(.*)' * fields.size}$"
       end
 
-      def parse_values(values, fields)
+      def parse_field_values(field_values, fields)
         hash = {}
 
-        values.each_with_index do |value, index|
-          next if value == ''
+        field_values.each_with_index do |field_value, index|
+          next if field_value == ''
 
-          hash[fields[index]] = parse_raw_field_value value
+          hash[fields[index]] = parse_raw_field_value field_value
         end
 
         hash

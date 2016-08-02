@@ -1,8 +1,9 @@
 describe Lightstreamer::CLI::Main do
   let(:cli) do
     Lightstreamer::CLI::Main.new [], server_url: 'http://a.com', username: 'username', password: 'password',
-                                     adapter_set: 'adapter-set', requested_maximum_bandwidth: nil, adapter: 'adapter',
-                                     items: ['item'], fields: ['field'], mode: :merge, polling_enabled: false
+                                     adapter_set: 'adapter-set', requested_maximum_bandwidth: nil,
+                                     data_adapter: 'adapter', items: ['item'], fields: ['field'], mode: :merge,
+                                     polling_enabled: false
   end
 
   let(:session) { instance_double 'Lightstreamer::Session' }
@@ -20,7 +21,7 @@ describe Lightstreamer::CLI::Main do
     expect(session).to receive(:session_id).and_return('A')
     expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
     expect(session).to receive(:build_subscription)
-      .with(items: ['item'], fields: ['field'], mode: :merge, adapter: 'adapter', maximum_update_frequency: nil,
+      .with(items: ['item'], fields: ['field'], mode: :merge, data_adapter: 'adapter', maximum_update_frequency: nil,
             selector: nil, snapshot: nil)
       .and_return(subscription)
 

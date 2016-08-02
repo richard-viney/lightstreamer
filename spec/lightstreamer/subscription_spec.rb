@@ -111,8 +111,8 @@ describe Lightstreamer::Subscription do
     id = subscription.id
 
     [
-      { line: '', item1: {}, item2: {} },
-      { line: "#{id},1|a|b", item1: { field1: 'a', field2: 'b' }, item2: {} },
+      { line: '', item1: nil, item2: nil },
+      { line: "#{id},1|a|b", item1: { field1: 'a', field2: 'b' }, item2: nil },
       { line: "#{id},2|$|$", item1: { field1: 'a', field2: 'b' }, item2: { field1: '', field2: '' } },
       { line: "#{id},2|c|d", item1: { field1: 'a', field2: 'b' }, item2: { field1: 'c', field2: 'd' } },
       { line: "#{id},1|e|#", item1: { field1: 'e', field2: nil }, item2: { field1: 'c', field2: 'd' } },
@@ -128,15 +128,20 @@ describe Lightstreamer::Subscription do
 
     subscription.clear_data
 
-    expect(subscription.item_data(:item1)).to eq({})
-    expect(subscription.item_data(:item2)).to eq({})
+    expect(subscription.item_data(:item1)).to eq(nil)
+    expect(subscription.item_data(:item2)).to eq(nil)
   end
 
-  it 'sets item data' do
+  it 'sets merge item data' do
     subscription.set_item_data :item1, test: 1
-    subscription.set_item_data :item2, test: 2
-
     expect(subscription.item_data(:item1)).to eq(test: 1)
-    expect(subscription.item_data(:item2)).to eq(test: 2)
+  end
+
+  it 'sets distinct item data' do
+    command_subscription = build :subscription, session: session, mode: :command, items: [:item1],
+                                                fields: [:key, :command, :test]
+
+    command_subscription.set_item_data :item1, [{ key: 1, test: 2 }]
+    expect(command_subscription.item_data(:item1)).to eq([{ key: 1, test: 2 }])
   end
 end

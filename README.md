@@ -46,14 +46,14 @@ session.connect
 # Create a new subscription that subscribes to thirty items and to four fields on each item
 subscription = session.build_subscription items: (1..30).map { |i| "item#{i}" },
                                           fields: [:ask, :bid, :stock_name, :time],
-                                          mode: :merge, adapter: 'QUOTE_ADAPTER'
+                                          mode: :merge, data_adapter: 'QUOTE_ADAPTER'
 
 # Create a thread-safe queue
 queue = Queue.new
 
 # When new data becomes available for the subscription it will be put on the queue. This callback
 # will be run on a worker thread.
-subscription.on_data do |subscription, item_name, item_data, new_values|
+subscription.on_data do |subscription, item_name, item_data, new_data|
   queue.push item_data
 end
 
@@ -75,8 +75,8 @@ subscription, then print streaming output from the server as it becomes availabl
 To print streaming data from the demo server run the following command:
 
 ```
-lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO --adapter QUOTE_ADAPTER \
-              --items item1 item2 item3 item4 item5 --fields ask bid stock_name time
+lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO --data-adapter QUOTE_ADAPTER \
+              --items item1 item2 item3 item4 item5 --fields ask bid stock_name --mode merge --snapshot
 ```
 
 To see a full list of available options for the command-line client run the following command:
