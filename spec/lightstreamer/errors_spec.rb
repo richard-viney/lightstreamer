@@ -1,5 +1,5 @@
 describe Lightstreamer::Errors::MetadataAdapterError do
-  it 'constructs from an error message and error code' do
+  it 'initializes from an error message and error code' do
     error = Lightstreamer::Errors::MetadataAdapterError.new 'message', -5
 
     expect(error.adapter_error_message).to eq('message')
@@ -8,7 +8,7 @@ describe Lightstreamer::Errors::MetadataAdapterError do
 end
 
 describe Lightstreamer::Errors::SessionEndError do
-  it 'constructs from a cause code' do
+  it 'initializes from a cause code' do
     error = Lightstreamer::Errors::SessionEndError.new '30'
 
     expect(error.cause_code).to eq(30)
@@ -16,7 +16,7 @@ describe Lightstreamer::Errors::SessionEndError do
 end
 
 describe Lightstreamer::LightstreamerError do
-  it 'builds the correct error type based on the numeric code' do
+  it 'builds the correct error type for each numeric code' do
     {
       1 => Lightstreamer::Errors::AuthenticationError,
       2 => Lightstreamer::Errors::UnknownAdapterSetError,

@@ -40,7 +40,7 @@ describe Lightstreamer::PostRequest do
     end
   end
 
-  it 'sends bulk requests and reports errors correctly' do
+  it 'sends bulk requests and reports any errors' do
     expect(Excon).to receive(:post)
       .with('http://a.com', body: "A\r\nB\r\nC", connect_timeout: 15, expects: 200)
       .and_return(build_response("OK\r\nERROR\r\n2\r\nERROR MESSAGE\r\nINVALID RESPONSE\r\n"))

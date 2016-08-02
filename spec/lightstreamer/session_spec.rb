@@ -70,8 +70,6 @@ describe Lightstreamer::Session do
   end
 
   it 'removes a subscription' do
-    session.instance_variable_set :@subscriptions, [subscription]
-
     expect(subscription).to receive(:stop)
 
     session.remove_subscription subscription

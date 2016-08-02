@@ -2,27 +2,18 @@ describe Lightstreamer::Subscription do
   let(:session) { instance_double 'Lightstreamer::Session' }
   let(:subscription) { build :subscription, session: session, items: [:item1, :item2], fields: [:field1, :field2] }
 
-  it 'assigns unique ids to subscriptions' do
+  it 'assigns consecutive unique ids to subscriptions' do
     initial_id = build(:subscription).id
 
     expect(build(:subscription).id).to eq(initial_id + 1)
     expect(build(:subscription).id).to eq(initial_id + 2)
   end
 
-  it 'turns items and fields into arrays' do
-    expect(subscription.items).to eq([:item1, :item2])
-    expect(subscription.fields).to eq([:field1, :field2])
-  end
-
   it 'turns mode into a symbol' do
     expect(build(:subscription, mode: 'distinct').mode).to eq(:distinct)
   end
 
-  it 'turns mode into a symbol' do
-    expect(build(:subscription, mode: 'distinct').mode).to eq(:distinct)
-  end
-
-  it 'raises an exception on unknown items' do
+  it 'raises on unknown items' do
     expect { subscription.item_data :item3 }.to raise_error(ArgumentError)
     expect { subscription.set_item_data :item3, {} }.to raise_error(ArgumentError)
   end
@@ -48,7 +39,7 @@ describe Lightstreamer::Subscription do
     subscription.unsilence
   end
 
-  it 'updates the maximum update frequency' do
+  it 'changes the maximum update frequency' do
     subscription.instance_variable_set :@active, true
     expect(session).to receive(:control_request).with(:reconf, LS_table: subscription.id, LS_requested_max_frequency: 2)
     subscription.maximum_update_frequency = 2
@@ -105,31 +96,6 @@ describe Lightstreamer::Subscription do
     expect(subscription.process_stream_data("#{subscription.id},2,OV5")).to be true
 
     expect(call_count).to eq(0)
-  end
-
-  it 'processes stream data' do
-    id = subscription.id
-
-    [
-      { line: '', item1: nil, item2: nil },
-      { line: "#{id},1|a|b", item1: { field1: 'a', field2: 'b' }, item2: nil },
-      { line: "#{id},2|$|$", item1: { field1: 'a', field2: 'b' }, item2: { field1: '', field2: '' } },
-      { line: "#{id},2|c|d", item1: { field1: 'a', field2: 'b' }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{id},1|e|#", item1: { field1: 'e', field2: nil }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{id},1|$$|##", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{id},2||", item1: { field1: '$', field2: '#' }, item2: { field1: 'c', field2: 'd' } },
-      { line: "#{id},1|\\u0040|", item1: { field1: '@', field2: '#' }, item2: { field1: 'c', field2: 'd' } }
-    ].each do |hash|
-      subscription.process_stream_data hash[:line]
-
-      expect(subscription.item_data(:item1)).to eq(hash[:item1])
-      expect(subscription.item_data(:item2)).to eq(hash[:item2])
-    end
-
-    subscription.clear_data
-
-    expect(subscription.item_data(:item1)).to eq(nil)
-    expect(subscription.item_data(:item2)).to eq(nil)
   end
 
   it 'sets merge item data' do

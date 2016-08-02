@@ -4,11 +4,13 @@ describe Lightstreamer::StreamConnection do
                                adapter_set: 'set', polling_enabled: false, requested_maximum_bandwidth: 2.5
   end
 
+  let(:url) { 'http://test.com/lightstreamer/create_session.txt' }
+
   let(:create_args) do
     query = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: 'username', LS_password: 'password',
               LS_adapter_set: 'set', LS_requested_max_bandwidth: 2.5 }
 
-    ['http://test.com/lightstreamer/create_session.txt', hash_including(query: query, connect_timeout: 15)]
+    [url, hash_including(query: query, connect_timeout: 15)]
   end
 
   it 'creates and runs a stream connection with a simple lifecycle' do
@@ -32,18 +34,23 @@ describe Lightstreamer::StreamConnection do
     expect(stream_connection.connected?).to be false
   end
 
-  it 'creates and runs a stream connection which rebinds itself in polling mode in response to a LOOP message' do
+  it 'creates and runs a polling connection which rebinds in response to a LOOP message' do
+    session.polling_enabled = true
+
     stream_thread = nil
 
-    expect(Excon).to receive(:post).with(*create_args) do |_url, params|
+    shared_query_params = { LS_requested_max_bandwidth: 2.5, LS_polling: true, LS_polling_millis: 15_000 }
+    create_query_params = { LS_op2: 'create', LS_cid: 'mgQkwtwdysogQz2BJ4Ji kOj2Bg', LS_user: 'username',
+                            LS_password: 'password', LS_adapter_set: 'set' }.merge shared_query_params
+
+    expect(Excon).to receive(:post)
+      .with(url, hash_including(query: create_query_params, connect_timeout: 15)) do |_url, params|
       stream_thread = Thread.current
-      session.polling_enabled = true
       params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\none\r\ntwo\r\nLOOP\r\n", nil, nil
     end
 
     bind_args = ['http://a.com/lightstreamer/bind_session.txt',
-                 hash_including(query: { LS_session: 'A', LS_requested_max_bandwidth: 2.5, LS_polling: true,
-                                         LS_polling_millis: 15_000 }, connect_timeout: 15)]
+                 hash_including(query: { LS_session: 'A' }.merge(shared_query_params), connect_timeout: 15)]
     expect(Excon).to receive(:post).with(*bind_args) do |_url, params|
       params[:response_block].call "OK\r\nSessionId:A\r\nControlAddress:a.com\r\n\r\nthree\r\nfour\r\n", nil, nil
       sleep
@@ -65,7 +72,7 @@ describe Lightstreamer::StreamConnection do
     loop { break unless stream_connection.connected? }
   end
 
-  it 'creates and runs a stream connection which is terminated by the server' do
+  it 'handles a stream connection which is terminated by the server' do
     stream_thread = nil
 
     expect(Excon).to receive(:post).with(*create_args) do |_url, params|
