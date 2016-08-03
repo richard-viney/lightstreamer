@@ -15,11 +15,11 @@ provided command-line client. Written against the
 Includes support for:
 
 - Streaming and polling connections
-- The four Lightstreamer subscription modes: `command`, `distinct`, `merge` and `raw`
-- Automatic management of table content when in `command` mode
+- All subscription modes: command, distinct, merge and raw
+- Automatic management of table content when in command mode
 - Silent subscriptions
-- Item snapshots
-- Unfiltered subscriptions and asynchronous overflow handling
+- Item snapshots and end-of-snapshot notifications
+- Unfiltered subscriptions and overflow notifications
 - Bulk subscription creation
 - Synchronous and asynchronous message sending
 - Detailed error reporting and error handling callbacks
@@ -43,13 +43,13 @@ The two primary classes that make up the public API are:
 - [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Session)
 - [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Subscription)
 
-The following code snippet demonstrates how to create a Lightstreamer session, build a subscription, then print
-streaming output as it arrives.
+The following code demonstrates how to create a Lightstreamer session, build a subscription, then use a thread-safe
+queue to print streaming output as it arrives.
 
 ```ruby
 require 'lightstreamer'
 
-# Create a new session that connects to the Lightstreamer demo server, which needs no authentication
+# Create a new session that connects to the Lightstreamer demo server
 session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com',
                                      adapter_set: 'DEMO', username: '', password: ''
 
@@ -57,9 +57,9 @@ session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com'
 session.connect
 
 # Create a new subscription that subscribes to thirty items and to four fields on each item
-subscription = session.build_subscription items: (1..30).map { |i| "item#{i}" },
+subscription = session.build_subscription data_adapter: 'QUOTE_ADAPTER', mode: :merge,
+                                          items: (1..30).map { |i| "item#{i}" },
                                           fields: [:ask, :bid, :stock_name, :time],
-                                          mode: :merge, data_adapter: 'QUOTE_ADAPTER'
 
 # Create a thread-safe queue
 queue = Queue.new
@@ -73,7 +73,7 @@ end
 # Start streaming data for the subscription and request an initial snapshot
 subscription.start snapshot: true
 
-# Loop printing out new data as soon as it becomes available on the queue
+# Print new data as soon as it becomes available on the queue
 loop do
   data = queue.pop
   puts "#{data[:time]} - #{data[:stock_name]} - bid: #{data[:bid]}, ask: #{data[:ask]}"
@@ -82,10 +82,10 @@ end
 
 ## Usage — Command-Line Client
 
-This gem provides a simple command-line client that can connect to a Lightstreamer server, activate a
-subscription, then print streaming output from the server as it becomes available.
+This gem provides a simple command-line client that can connect to a Lightstreamer server and display
+live streaming output for a set of items and fields.
 
-To print streaming data from the demo server run the following command:
+To stream data from Lightstreamer's demo server run the following command:
 
 ```
 lightstreamer --server-url http://push.lightstreamer.com --adapter-set DEMO \
