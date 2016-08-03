@@ -16,7 +16,7 @@ describe Lightstreamer::StreamConnection do
   it 'creates and runs a stream connection with a simple lifecycle' do
     expect(Excon).to receive(:post).with(*create_args) do |_url, params|
       params[:response_block].call "OK\r\nSessionId:A\r\n\r\none\r\ntwo\r\n", nil, nil
-      loop {}
+      loop { params[:response_block].call "one\r\ntwo\r\n", nil, nil }
     end
 
     stream_connection = Lightstreamer::StreamConnection.new session
