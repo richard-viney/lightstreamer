@@ -53,6 +53,11 @@ require 'lightstreamer'
 session = Lightstreamer::Session.new server_url: 'http://push.lightstreamer.com',
                                      adapter_set: 'DEMO', username: '', password: ''
 
+# Add a simple error handler that just raises the error and so terminates the application
+session.on_error do |error|
+  raise error
+end
+
 # Connect the session
 session.connect
 
