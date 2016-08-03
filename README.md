@@ -106,7 +106,7 @@ lightstreamer help stream
 
 ## Documentation
 
-API documentation is available [here](http://www.rubydoc.info/github/rviney/lightstreamer).
+API documentation is available [here](http://www.rubydoc.info/github/rviney/lightstreamer/master).
 
 ## Contributors
 
