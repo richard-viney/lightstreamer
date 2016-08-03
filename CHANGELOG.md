@@ -8,7 +8,7 @@
 
 - Added support for Lightstreamer's `COMMAND` and `RAW` subscription modes
 - Added support for Lightstreamer's polling mode and switching an active session between streaming and polling
-- `Lightstreamer::Subscription#item_data` now return `nil` if the requested item has never had any data set
+- `Lightstreamer::Subscription#item_data` now returns `nil` if the requested item has never had any data set
 - Renamed `Lightstreamer::Subscription#adapter` to `Lightstreamer::Subscription#data_adapter` and the `--adapter`
   command-line option to `--data-adapter`
 - The `--mode` command-line option is now required because the default value of `merge` has been removed
