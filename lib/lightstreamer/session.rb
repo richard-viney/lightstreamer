@@ -25,13 +25,6 @@ module Lightstreamer
     # @return [String, nil]
     attr_reader :adapter_set
 
-    # If an error occurs on the stream connection that causes the session to terminate then details of the error will be
-    # stored in this attribute. If the session is terminated as a result of calling {#disconnect} then the error will be
-    # {Errors::SessionEndError}.
-    #
-    # @return [LightstreamerError, nil]
-    attr_reader :error
-
     # The server-side bandwidth constraint on data usage, expressed in kbps. If this is zero then no limit is applied.
     #
     # @return [Float]
@@ -58,8 +51,7 @@ module Lightstreamer
     # @option options [Boolean] :polling_enabled Whether polling mode is enabled. See {#polling_enabled} for details.
     #                 Defaults to `false`.
     def initialize(options = {})
-      @subscriptions = []
-      @subscriptions_mutex = Mutex.new
+      @mutex = Mutex.new
 
       @server_url = options.fetch :server_url
       @username = options[:username]
@@ -68,15 +60,14 @@ module Lightstreamer
       @requested_maximum_bandwidth = options[:requested_maximum_bandwidth].to_f
       @polling_enabled = options[:polling_enabled]
 
-      @on_message_result_callbacks = []
+      @subscriptions = []
+      @callbacks = { on_message_result: [], on_error: [] }
     end
 
     # Connects a new Lightstreamer session using the details passed to {#initialize}. If an error occurs then
     # a {LightstreamerError} subclass will be raised.
     def connect
       return if @stream_connection
-
-      @error = nil
 
       @stream_connection = StreamConnection.new self
       @stream_connection.connect
@@ -149,7 +140,7 @@ module Lightstreamer
     def build_subscription(options)
       subscription = Subscription.new self, options
 
-      @subscriptions_mutex.synchronize { @subscriptions << subscription }
+      @mutex.synchronize { @subscriptions << subscription }
 
       subscription
     end
@@ -162,7 +153,7 @@ module Lightstreamer
     def remove_subscription(subscription)
       subscription.stop
 
-      @subscriptions_mutex.synchronize { @subscriptions.delete subscription }
+      @mutex.synchronize { @subscriptions.delete subscription }
     end
 
     # This method performs a bulk {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on
@@ -232,7 +223,7 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run.
     def on_message_result(&callback)
-      @on_message_result_callbacks << callback
+      @mutex.synchronize { @callbacks[:on_message_result] << callback }
     end
 
     # Sends a request to this session's control connection. If an error occurs then a {LightstreamerError} subclass will
@@ -246,6 +237,16 @@ module Lightstreamer
       PostRequest.execute url, options.merge(LS_session: session_id, LS_op: operation)
     end
 
+    # Adds the passed block to the list of callbacks that will be run when this session encounters an error on its
+    # processing thread caused by an error with the steam connection. The block will be called on a worker thread and so
+    # the code that is run by the block must be thread-safe. The argument passed to the block is `|error|`, which will
+    # be a {LightstreamerError} subclass detailing the error that occurred.
+    #
+    # @param [Proc] callback The callback that is to be run.
+    def on_error(&callback)
+      @mutex.synchronize { @callbacks[:on_error] << callback }
+    end
+
     private
 
     # Starts the processing thread that reads and processes incoming data from the stream connection.
@@ -253,22 +254,25 @@ module Lightstreamer
       @processing_thread = Thread.new do
         Thread.current.abort_on_exception = true
 
-        loop do
-          line = @stream_connection.read_line
-          break if line.nil?
+        loop { break unless processing_thread_tick @stream_connection.read_line }
 
-          process_stream_line line
-        end
-
-        # The stream connection has terminated so the session is assumed to be over
-        @error = @stream_connection.error
         @processing_thread = @stream_connection = nil
+      end
+    end
+
+    def processing_thread_tick(line)
+      if line
+        process_stream_line line
+        true
+      else
+        @mutex.synchronize { @callbacks[:on_error].each { |callback| callback.call @stream_connection.error } }
+        false
       end
     end
 
     # Processes a single line of incoming stream data. This method is always run on the processing thread.
     def process_stream_line(line)
-      return if @subscriptions.any? { |subscription| subscription.process_stream_data line }
+      return if @mutex.synchronize { @subscriptions.any? { |subscription| subscription.process_stream_data line } }
       return if process_send_message_outcome line
 
       warn "Lightstreamer: unprocessed stream data '#{line}'"
@@ -279,8 +283,10 @@ module Lightstreamer
       outcome = SendMessageOutcomeMessage.parse line
       return unless outcome
 
-      @on_message_result_callbacks.each do |callback|
-        callback.call outcome.sequence, outcome.numbers, outcome.error
+      @mutex.synchronize do
+        @callbacks[:on_message_result].each do |callback|
+          callback.call outcome.sequence, outcome.numbers, outcome.error
+        end
       end
 
       true

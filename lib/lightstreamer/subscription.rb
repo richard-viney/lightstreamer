@@ -56,16 +56,15 @@ module Lightstreamer
     #
     # @private
     def initialize(session, options)
-      @session = session
+      @mutex = Mutex.new
 
+      @session = session
       @items = options.fetch(:items)
       @fields = options.fetch(:fields)
       @mode = options.fetch(:mode).to_sym
       @data_adapter = options[:data_adapter]
       @selector = options[:selector]
       @maximum_update_frequency = sanitize_frequency options[:maximum_update_frequency]
-
-      @data_mutex = Mutex.new
 
       clear_data
       clear_callbacks
@@ -148,7 +147,7 @@ module Lightstreamer
     # Clears all current data stored for this subscription. New data will continue to be processed as it becomes
     # available.
     def clear_data
-      @data_mutex.synchronize { @data = (0...items.size).map { SubscriptionItemData.new } }
+      @mutex.synchronize { @data = (0...items.size).map { SubscriptionItemData.new } }
     end
 
     # Returns a copy of the current data of one of this subscription's items. If {#mode} is `:merge` then the returned
@@ -163,7 +162,7 @@ module Lightstreamer
       index = @items.index item_name
       raise ArgumentError, 'Unknown item' unless index
 
-      @data_mutex.synchronize { @data[index].data && @data[index].data.dup }
+      @mutex.synchronize { @data[index].data && @data[index].data.dup }
     end
 
     # Sets the current data for the item with the specified name. This is only allowed when {mode} is `:command` or
@@ -177,7 +176,7 @@ module Lightstreamer
       index = @items.index item_name
       raise ArgumentError, 'Unknown item' unless index
 
-      @data_mutex.synchronize { @data[index].set_data item_data, mode }
+      @mutex.synchronize { @data[index].set_data item_data, mode }
     end
 
     # Adds the passed block to the list of callbacks that will be run when new data for this subscription arrives. The
@@ -187,7 +186,7 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when new data arrives.
     def on_data(&callback)
-      @data_mutex.synchronize { @callbacks[:on_data] << callback }
+      @mutex.synchronize { @callbacks[:on_data] << callback }
     end
 
     # Adds the passed block to the list of callbacks that will be run when the server reports an overflow for this
@@ -198,7 +197,7 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when an overflow is reported for this subscription.
     def on_overflow(&callback)
-      @data_mutex.synchronize { @callbacks[:on_overflow] << callback }
+      @mutex.synchronize { @callbacks[:on_overflow] << callback }
     end
 
     # Adds the passed block to the list of callbacks that will be run when the server reports an end-of-snapshot
@@ -209,12 +208,12 @@ module Lightstreamer
     #
     # @param [Proc] callback The callback that is to be run when an overflow is reported for this subscription.
     def on_end_of_snapshot(&callback)
-      @data_mutex.synchronize { @callbacks[:on_end_of_snapshot] << callback }
+      @mutex.synchronize { @callbacks[:on_end_of_snapshot] << callback }
     end
 
     # Removes all {#on_data}, {#on_overflow} and {#on_end_of_snapshot} callbacks present on this subscription.
     def clear_callbacks
-      @data_mutex.synchronize { @callbacks = { on_data: [], on_overflow: [], on_end_of_snapshot: [] } }
+      @mutex.synchronize { @callbacks = { on_data: [], on_overflow: [], on_end_of_snapshot: [] } }
     end
 
     # Processes a line of stream data if it is relevant to this subscription. This method is thread-safe and is intended
@@ -242,7 +241,7 @@ module Lightstreamer
     def process_update_message(message)
       return unless message
 
-      @data_mutex.synchronize do
+      @mutex.synchronize do
         @data[message.item_index].send "process_new_#{mode}_data", message.data.dup
         run_callbacks :on_data, @items[message.item_index], @data[message.item_index].data, message.data
       end
@@ -251,13 +250,13 @@ module Lightstreamer
     def process_overflow_message(message)
       return unless message
 
-      @data_mutex.synchronize { run_callbacks :on_overflow, @items[message.item_index], message.overflow_size }
+      @mutex.synchronize { run_callbacks :on_overflow, @items[message.item_index], message.overflow_size }
     end
 
     def process_end_of_snapshot_message(message)
       return unless message
 
-      @data_mutex.synchronize { run_callbacks :on_end_of_snapshot, @items[message.item_index] }
+      @mutex.synchronize { run_callbacks :on_end_of_snapshot, @items[message.item_index] }
     end
 
     def run_callbacks(callback_type, *args)

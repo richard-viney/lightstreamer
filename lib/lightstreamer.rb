@@ -1,3 +1,5 @@
+require 'thread'
+
 require 'excon'
 require 'thor'
 require 'uri'

@@ -26,7 +26,6 @@ describe Lightstreamer::Session do
     expect(stream_connection).to receive(:read_line).and_return('invalid data')
     expect(stream_connection).to receive(:read_line).and_return('MSG,sequence,5,DONE')
     allow(stream_connection).to receive(:read_line) { recurring_line }
-    expect(stream_connection).to receive(:error).and_return(nil)
 
     session.instance_variable_set :@subscriptions, [subscription]
     expect(subscription).to receive(:process_stream_data).with("#{subscription.id},1|test").and_return(true)
@@ -41,12 +40,15 @@ describe Lightstreamer::Session do
     end.to output("Lightstreamer: unprocessed stream data 'invalid data'\n").to_stderr
   end
 
-  it 'handles when the stream connection dies' do
+  it 'runs error callbacks on a stream connection error' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
 
     expect(stream_connection).to receive(:connect)
     expect(stream_connection).to receive(:read_line).and_return(nil)
     expect(stream_connection).to receive(:error).and_return(Lightstreamer::Errors::SessionEndError.new(31))
+
+    received_error = nil
+    session.on_error { |error| received_error = error }
 
     session.connect
 
@@ -54,7 +56,7 @@ describe Lightstreamer::Session do
     processing_thread.join if processing_thread
 
     expect(session.connected?).to be false
-    expect(session.error).to be_a(Lightstreamer::Errors::SessionEndError)
+    expect(received_error).to be_a(Lightstreamer::Errors::SessionEndError)
   end
 
   it 'handles when the stream connection fails to connect' do
@@ -102,8 +104,7 @@ describe Lightstreamer::Session do
     it 'sends an synchronous message' do
       expect(Lightstreamer::PostRequest).to receive(:execute)
         .with('http://a.com/lightstreamer/send_message.txt', LS_session: 'session', LS_message: 'message',
-                                                             LS_sequence: 'sequence', LS_msg_prog: 1,
-                                                             LS_max_wait: 500)
+                                                             LS_sequence: 'sequence', LS_msg_prog: 1, LS_max_wait: 500)
 
       session.send_message 'message', async: true, sequence: 'sequence', number: 1, max_wait: 500
     end

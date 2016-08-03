@@ -8,7 +8,7 @@ describe Lightstreamer::CLI::Main do
 
   let(:session) { instance_double 'Lightstreamer::Session' }
   let(:subscription) { instance_double 'Lightstreamer::Subscription' }
-  let(:queue) { instance_double 'Queue' }
+  let(:queue) { Queue.new }
 
   it 'prints stream data' do
     expect(Lightstreamer::Session).to receive(:new)
@@ -17,9 +17,9 @@ describe Lightstreamer::CLI::Main do
       .and_return(session)
 
     expect(session).to receive(:on_message_result)
+    expect(session).to receive(:on_error)
     expect(session).to receive(:connect)
     expect(session).to receive(:session_id).and_return('A')
-    expect(session).to receive(:error).twice.and_return(Lightstreamer::Errors::SessionEndError.new(31))
     expect(session).to receive(:build_subscription)
       .with(items: ['item'], fields: ['field'], mode: :merge, data_adapter: 'adapter', maximum_update_frequency: nil,
             selector: nil, snapshot: nil)
@@ -30,13 +30,13 @@ describe Lightstreamer::CLI::Main do
     expect(subscription).to receive(:on_end_of_snapshot)
     expect(subscription).to receive(:start)
 
+    queue.push 'Test'
+    queue.push Lightstreamer::Errors::SessionEndError.new(31)
     expect(Queue).to receive(:new).and_return(queue)
-    expect(queue).to receive(:empty?).and_return(false)
-    expect(queue).to receive(:pop).once.and_return('Test')
 
     expect do
       cli.stream
-    end.to output("Session ID: A\nTest\n").to_stdout.and raise_error(Lightstreamer::Errors::SessionEndError)
+    end.to output("Session ID: A\nTest\nError: Lightstreamer::Errors::SessionEndError\n").to_stdout
   end
 
   it 'formats new data correctly' do
@@ -67,5 +67,14 @@ describe Lightstreamer::CLI::Main do
     expect(queue).to receive(:push).with('End of snapshot for item item')
 
     cli.send :on_end_of_snapshot, subscription, 'item'
+  end
+
+  it 'puts errors on the queue' do
+    sync_error = Lightstreamer::Errors::SyncError.new
+
+    cli.instance_variable_set :@queue, queue
+    expect(queue).to receive(:push).with(sync_error)
+
+    cli.send :on_error, sync_error
   end
 end

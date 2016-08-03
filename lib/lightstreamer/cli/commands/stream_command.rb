@@ -20,26 +20,36 @@ module Lightstreamer
       option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'
 
       def stream
-        @queue = Queue.new
+        prepare_stream
 
-        create_session
-        create_subscription
+        puts "Session ID: #{@session.session_id}"
 
         loop do
-          puts @queue.pop unless @queue.empty?
+          data = @queue.pop
 
-          raise @session.error if @session.error
+          if data.is_a? Lightstreamer::LightstreamerError
+            puts "Error: #{data}"
+            break
+          end
+
+          puts data
         end
       end
 
       private
 
+      def prepare_stream
+        @queue = Queue.new
+
+        create_session
+        create_subscription
+      end
+
       def create_session
         @session = Lightstreamer::Session.new session_options
         @session.connect
         @session.on_message_result(&method(:on_message_result))
-
-        puts "Session ID: #{@session.session_id}"
+        @session.on_error(&method(:on_error))
       end
 
       def create_subscription
@@ -78,6 +88,10 @@ module Lightstreamer
 
       def on_end_of_snapshot(_subscription, item_name)
         @queue.push "End of snapshot for item #{item_name}"
+      end
+
+      def on_error(error)
+        @queue.push error
       end
     end
   end
