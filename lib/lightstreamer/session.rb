@@ -160,11 +160,13 @@ module Lightstreamer
     # if no error occurred.
     #
     # @param [Array<Subscription>] subscriptions The subscriptions to start.
+    # @param [Hash] options The options to start all subscriptions with. See {Subscription#start} for details on the
+    #        supported options.
     #
     # @return [Array<LightstreamerError, nil>]
-    def bulk_subscription_start(*subscriptions)
+    def bulk_subscription_start(subscriptions, options = {})
       request_bodies = subscriptions.map do |subscription|
-        args = subscription.start_control_request_args
+        args = subscription.start_control_request_args options
         PostRequest.request_body({ LS_session: session_id, LS_op: args.first }.merge(args[1]))
       end
 
