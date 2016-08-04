@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.10 — Unreleased
+
+- 
+
 ### 0.9 — August 4, 2016
 
 - Replaced the `Lightstreamer::Session#error` attribute with a new `Lightstreamer::Session#on_error` callback to enable
