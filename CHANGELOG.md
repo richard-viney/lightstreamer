@@ -4,6 +4,7 @@
 
 - Replaced the `Lightstreamer::Session#error` attribute with a new `Lightstreamer::Session#on_error` callback to enable
   more efficient error handling and notification
+- Fixed issues with `Lightstreamer::Session#bulk_subscription_start`
 
 ### 0.8 — August 2, 2016
 

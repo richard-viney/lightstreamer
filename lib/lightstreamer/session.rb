@@ -101,9 +101,7 @@ module Lightstreamer
       @stream_connection.disconnect if @stream_connection
       @processing_thread.exit if @processing_thread
 
-      @subscriptions.each do |subscription|
-        subscription.instance_variable_set :@active, false
-      end
+      @subscriptions.each { |subscription| subscription.instance_variable_set :@active, false }
 
       @processing_thread = @stream_connection = nil
     end
@@ -115,9 +113,7 @@ module Lightstreamer
     # it forces the stream connection to rebind using the new setting. If an error occurs then a {LightstreamerError}
     # subclass will be raised.
     def force_rebind
-      return unless @stream_connection
-
-      control_request :force_rebind
+      control_request :force_rebind if @stream_connection
     end
 
     # Builds a new subscription for this session with the specified options. Note that ths does not activate the
@@ -168,10 +164,11 @@ module Lightstreamer
     # @return [Array<LightstreamerError, nil>]
     def bulk_subscription_start(*subscriptions)
       request_bodies = subscriptions.map do |subscription|
-        PostRequest.request_body session_id, *subscription.start_control_request_args
+        args = subscription.start_control_request_args
+        PostRequest.request_body({ LS_session: session_id, LS_op: args.first }.merge(args[1]))
       end
 
-      errors = PostRequest.bulk_execute @stream_connection.control_address, request_bodies
+      errors = PostRequest.bulk_execute control_request_url, request_bodies
 
       # Set @active to true on all subscriptions that did not have an error
       errors.each_with_index do |error, index|
@@ -232,9 +229,7 @@ module Lightstreamer
     # @param [Symbol] operation The control operation to perform.
     # @param [Hash] options The options to send with the control request.
     def control_request(operation, options = {})
-      url = URI.join(@stream_connection.control_address, '/lightstreamer/control.txt').to_s
-
-      PostRequest.execute url, options.merge(LS_session: session_id, LS_op: operation)
+      PostRequest.execute control_request_url, options.merge(LS_session: session_id, LS_op: operation)
     end
 
     # Adds the passed block to the list of callbacks that will be run when this session encounters an error on its
@@ -248,6 +243,10 @@ module Lightstreamer
     end
 
     private
+
+    def control_request_url
+      URI.join(@stream_connection.control_address, '/lightstreamer/control.txt').to_s
+    end
 
     # Starts the processing thread that reads and processes incoming data from the stream connection.
     def create_processing_thread

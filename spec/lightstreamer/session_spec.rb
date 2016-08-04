@@ -122,10 +122,19 @@ describe Lightstreamer::Session do
       expect(subscription.active).to be_falsey
       expect(second_subscription.active).to be_falsey
 
-      expect(Lightstreamer::PostRequest).to receive(:request_body).and_return('body1')
-      expect(Lightstreamer::PostRequest).to receive(:request_body).and_return('body2')
+      expect(Lightstreamer::PostRequest).to receive(:request_body)
+        .with(LS_session: 'session', LS_op: :add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %w(item),
+              LS_schema: %w(field), LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+              LS_snapshot: false)
+        .and_return('body1')
+
+      expect(Lightstreamer::PostRequest).to receive(:request_body)
+        .with(LS_session: 'session', LS_op: :add, LS_table: second_subscription.id, LS_mode: 'MERGE', LS_schema: [],
+              LS_id: [], LS_selector: nil, LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_snapshot: false)
+        .and_return('body2')
+
       expect(Lightstreamer::PostRequest).to receive(:bulk_execute)
-        .with('http://a.com', %w(body1 body2))
+        .with('http://a.com/lightstreamer/control.txt', %w(body1 body2))
         .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new])
 
       errors = session.bulk_subscription_start subscription, second_subscription
