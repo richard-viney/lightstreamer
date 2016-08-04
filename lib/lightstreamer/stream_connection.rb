@@ -172,7 +172,7 @@ module Lightstreamer
     def process_body_line(line)
       if line =~ /^LOOP( \d+|)$/
         @loop = true
-      elsif line =~ /^END( \d+|)/
+      elsif line =~ /^END( \d+|)$/
         @error = Errors::SessionEndError.new line[4..-1]
       elsif !line.empty?
         @queue.push line
