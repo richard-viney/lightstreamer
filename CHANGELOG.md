@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.11 — Unreleased
+
+- 
+
 ### 0.10 — August 5, 2016
 
 - Added support for shared subscription start options to `Lightstreamer::Session#bulk_subscription_start`
