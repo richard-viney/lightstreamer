@@ -181,7 +181,8 @@ module Lightstreamer
 
     # Adds the passed block to the list of callbacks that will be run when new data for this subscription arrives. The
     # block will be called on a worker thread and so the code that is run by the block must be thread-safe. The
-    # arguments passed to the block are `|subscription, item_name, item_data, new_data|`. If {#mode} is `:distinct`
+    # arguments passed to the block are `|subscription, item_name, item_data, new_data|`. The `item_data` argument will
+    # be an array if {#mode} is `:command`, for all other modes it will be a hash. Note that if {#mode} is `:distinct`
     # or `:raw` then `item_data` and `new_data` will be the same.
     #
     # @param [Proc] callback The callback that is to be run when new data arrives.
