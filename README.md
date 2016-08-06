@@ -64,7 +64,7 @@ session.connect
 # Create a new subscription that subscribes to thirty items and to four fields on each item
 subscription = session.build_subscription data_adapter: 'QUOTE_ADAPTER', mode: :merge,
                                           items: (1..30).map { |i| "item#{i}" },
-                                          fields: [:ask, :bid, :stock_name, :time],
+                                          fields: [:ask, :bid, :stock_name, :time]
 
 # Create a thread-safe queue
 queue = Queue.new
