@@ -160,7 +160,7 @@ module Lightstreamer
     # if no error occurred.
     #
     # @param [Array<Subscription>] subscriptions The subscriptions to start.
-    # @param [Hash] options The options to start all subscriptions with. See {Subscription#start} for details on the
+    # @param [Hash] options The options to start the subscriptions with. See {Subscription#start} for details on the
     #        supported options.
     #
     # @return [Array<LightstreamerError, nil>]
