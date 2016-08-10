@@ -235,9 +235,9 @@ module Lightstreamer
     end
 
     # Adds the passed block to the list of callbacks that will be run when this session encounters an error on its
-    # processing thread caused by an error with the steam connection. The block will be called on a worker thread and so
-    # the code that is run by the block must be thread-safe. The argument passed to the block is `|error|`, which will
-    # be a {LightstreamerError} subclass detailing the error that occurred.
+    # processing thread caused by an error with the stream connection. The block will be called on a worker thread and
+    # so the code that is run by the block must be thread-safe. The argument passed to the block is `|error|`, which
+    # will be a {LightstreamerError} subclass detailing the error that occurred.
     #
     # @param [Proc] callback The callback that is to be run.
     def on_error(&callback)
