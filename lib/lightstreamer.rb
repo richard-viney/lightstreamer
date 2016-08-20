@@ -1,9 +1,9 @@
 require 'thread'
+require 'uri'
 require 'weakref'
 
 require 'excon'
 require 'thor'
-require 'uri'
 
 require 'lightstreamer/cli/main'
 require 'lightstreamer/cli/commands/stream_command'
