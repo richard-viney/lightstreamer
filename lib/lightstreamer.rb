@@ -1,4 +1,5 @@
 require 'thread'
+require 'weakref'
 
 require 'excon'
 require 'thor'

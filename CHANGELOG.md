@@ -3,6 +3,8 @@
 ### 0.12 — Unreleased
 
 - Added `Lightstreamer::Session#remove_subscriptions`
+- Removed `Lightstreamer::Subscription#session`, subscriptions now hold a weak reference to their session in order to
+  prevent a circular reference
 
 ### 0.11 — August 20, 2016
 

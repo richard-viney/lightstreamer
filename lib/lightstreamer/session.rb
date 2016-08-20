@@ -92,7 +92,8 @@ module Lightstreamer
       @stream_connection && @stream_connection.session_id
     end
 
-    # Disconnects this Lightstreamer session and terminates the session on the server. All worker threads are exited.
+    # Disconnects this Lightstreamer session and terminates the session on the server. All worker threads are exited,
+    # and all subscriptions created during the connected session can no longer be used.
     def disconnect
       control_request LS_op: :destroy if @stream_connection
 
@@ -101,10 +102,8 @@ module Lightstreamer
       @stream_connection.disconnect if @stream_connection
       @processing_thread.exit if @processing_thread
 
-      @subscriptions.each do |subscription|
-        subscription.after_control_request :stop
-        subscription.instance_variable_set :@session, nil
-      end
+      @subscriptions.each { |subscription| subscription.after_control_request :stop }
+      @subscriptions = []
 
       @processing_thread = @stream_connection = nil
     end
@@ -169,7 +168,6 @@ module Lightstreamer
       @mutex.synchronize do
         subscriptions.reject(&:active).each do |subscription|
           @subscriptions.delete subscription
-          subscription.instance_variable_set :@session, nil
         end
       end
 

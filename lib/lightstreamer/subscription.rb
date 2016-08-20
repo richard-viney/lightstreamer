@@ -4,11 +4,6 @@ module Lightstreamer
   # streaming subscription data can be consumed by registering an asynchronous data callback using {#on_data}, or by
   # polling using {#item_data}.
   class Subscription
-    # The session that this subscription is associated with.
-    #
-    # @return [Session]
-    attr_reader :session
-
     # The names of the items to subscribe to.
     #
     # @return [Array]
@@ -58,7 +53,7 @@ module Lightstreamer
     def initialize(session, options)
       @mutex = Mutex.new
 
-      @session = session
+      @session = WeakRef.new session
       @items = options.fetch(:items)
       @fields = options.fetch(:fields)
       @mode = options.fetch(:mode).to_sym
@@ -97,7 +92,7 @@ module Lightstreamer
     def start(options = {})
       return if @active
 
-      session.control_request control_request_options(:start, options)
+      @session.control_request control_request_options(:start, options)
       after_control_request :start
     end
 
@@ -105,14 +100,14 @@ module Lightstreamer
     # this subscription was not started in silent mode then this method has no effect. If an error occurs then a
     # {LightstreamerError} subclass will be raised.
     def unsilence
-      session.control_request control_request_options(:unsilence)
+      @session.control_request control_request_options(:unsilence)
       after_control_request :unsilence
     end
 
     # Stops streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
     # will be raised.
     def stop
-      session.control_request control_request_options(:stop) if @active
+      @session.control_request control_request_options(:stop) if @active
       after_control_request :stop
     end
 
@@ -125,7 +120,7 @@ module Lightstreamer
     #        details.
     def maximum_update_frequency=(new_frequency)
       new_frequency = sanitize_frequency new_frequency
-      session.control_request LS_op: :reconf, LS_table: id, LS_requested_max_frequency: new_frequency if @active
+      @session.control_request LS_op: :reconf, LS_table: id, LS_requested_max_frequency: new_frequency if @active
       @maximum_update_frequency = new_frequency
     end
 
@@ -224,9 +219,9 @@ module Lightstreamer
       when :start
         start_control_request_options options
       when :unsilence
-        { LS_session: session.session_id, LS_op: :start, LS_table: id }
+        { LS_session: @session.session_id, LS_op: :start, LS_table: id }
       when :stop
-        { LS_session: session.session_id, LS_op: :delete, LS_table: id }
+        { LS_session: @session.session_id, LS_op: :delete, LS_table: id }
       end
     end
 
@@ -286,7 +281,7 @@ module Lightstreamer
 
       operation = options[:silent] ? :add_silent : :add
 
-      { LS_session: session.session_id, LS_op: operation, LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items,
+      { LS_session: @session.session_id, LS_op: operation, LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items,
         LS_schema: fields, LS_selector: selector, LS_snapshot: options.fetch(:snapshot, false),
         LS_requested_max_frequency: maximum_update_frequency, LS_data_adapter: data_adapter }
     end
