@@ -101,7 +101,10 @@ module Lightstreamer
       @stream_connection.disconnect if @stream_connection
       @processing_thread.exit if @processing_thread
 
-      @subscriptions.each { |subscription| subscription.after_control_request :stop }
+      @subscriptions.each do |subscription|
+        subscription.after_control_request :stop
+        subscription.instance_variable_set :@session, nil
+      end
 
       @processing_thread = @stream_connection = nil
     end
@@ -147,9 +150,30 @@ module Lightstreamer
     #
     # @param [Subscription] subscription The subscription to stop and remove from this session.
     def remove_subscription(subscription)
-      subscription.stop
+      errors = remove_subscriptions [subscription]
 
-      @mutex.synchronize { @subscriptions.delete subscription }
+      raise errors.first if errors.first
+    end
+
+    # Stops the specified subscriptions and removes them from this session. To just stop subscriptions with the option
+    # of restarting them at a later date use {#stop_subscriptions} or {Subscription#stop}. The return value is an array
+    # with one entry per subscription and indicates the error state returned by the server for that subscription's stop
+    # request, or `nil` if no error occurred.
+    #
+    # @param [Array<Subscription>] subscriptions The subscriptions to stop and remove from this session.
+    #
+    # @return [Array<LightstreamerError, nil>]
+    def remove_subscriptions(subscriptions)
+      errors = stop_subscriptions subscriptions
+
+      @mutex.synchronize do
+        subscriptions.reject(&:active).each do |subscription|
+          @subscriptions.delete subscription
+          subscription.instance_variable_set :@session, nil
+        end
+      end
+
+      errors
     end
 
     # This method performs {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on each

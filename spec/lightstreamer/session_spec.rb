@@ -72,9 +72,21 @@ describe Lightstreamer::Session do
   end
 
   it 'removes a subscription' do
-    expect(subscription).to receive(:stop)
+    expect(session).to receive(:stop_subscriptions).with([subscription]).and_return([nil])
+    expect { session.remove_subscription subscription }.to_not raise_error
 
-    session.remove_subscription subscription
+    expect(session).to receive(:stop_subscriptions)
+      .with([subscription])
+      .and_return([Lightstreamer::LightstreamerError.new])
+    expect { session.remove_subscription subscription }.to raise_error(Lightstreamer::LightstreamerError)
+  end
+
+  it 'removes multiple subscriptions' do
+    expect(session).to receive(:stop_subscriptions).with([subscription, subscription]).and_return([nil, nil])
+
+    expect(subscription.session).to_not be nil
+    session.remove_subscriptions [subscription, subscription]
+    expect(subscription.session).to be nil
   end
 
   context 'with an active stream connection' do

@@ -2,7 +2,7 @@
 
 ### 0.12 — Unreleased
 
-- 
+- Added `Lightstreamer::Session#remove_subscriptions`
 
 ### 0.11 — August 20, 2016
 
