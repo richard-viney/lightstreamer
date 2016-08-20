@@ -2,7 +2,7 @@ module Lightstreamer
   # This class is responsible for managing a Lightstreamer session, and along with the {Subscription} class forms the
   # primary API for working with Lightstreamer. Start by calling {#initialize} with the desired server URL and other
   # options, then call {#connect} to initiate the session. Once connected create subscriptions using
-  # {#build_subscription} and then start streaming data by calling {Subscription#start} or {#bulk_subscription_start}.
+  # {#build_subscription} and then start streaming data by calling {Subscription#start} or {#start_subscriptions}.
   # See the {Subscription} class for details on how to consume the streaming data as it arrives.
   class Session
     # The URL of the Lightstreamer server to connect to. Set by {#initialize}.
@@ -94,14 +94,14 @@ module Lightstreamer
 
     # Disconnects this Lightstreamer session and terminates the session on the server. All worker threads are exited.
     def disconnect
-      control_request :destroy if @stream_connection
+      control_request LS_op: :destroy if @stream_connection
 
       @processing_thread.join 5 if @processing_thread
     ensure
       @stream_connection.disconnect if @stream_connection
       @processing_thread.exit if @processing_thread
 
-      @subscriptions.each { |subscription| subscription.instance_variable_set :@active, false }
+      @subscriptions.each { |subscription| subscription.after_control_request :stop }
 
       @processing_thread = @stream_connection = nil
     end
@@ -113,7 +113,7 @@ module Lightstreamer
     # it forces the stream connection to rebind using the new setting. If an error occurs then a {LightstreamerError}
     # subclass will be raised.
     def force_rebind
-      control_request :force_rebind if @stream_connection
+      control_request LS_op: :force_rebind if @stream_connection
     end
 
     # Builds a new subscription for this session with the specified options. Note that ths does not activate the
@@ -152,29 +152,62 @@ module Lightstreamer
       @mutex.synchronize { @subscriptions.delete subscription }
     end
 
-    # This method performs a bulk {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on
-    # each subscription individually would also work but requires a separate POST request to be sent for every
-    # subscription, whereas this request starts all of the passed subscriptions in a single POST request which is
-    # significantly faster for a large number of subscriptions. The return value is an array with one entry per
-    # subscription and indicates the error state returned by the server for that subscription's start request, or `nil`
-    # if no error occurred.
+    # This method performs {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on each
+    # subscription individually would also work but requires a separate POST request to be sent for every subscription,
+    # whereas this request starts all of the passed subscriptions in a single POST request which is significantly faster
+    # for a large number of subscriptions. The return value is an array with one entry per subscription and indicates
+    # the error state returned by the server for that subscription's start request, or `nil` if no error occurred.
     #
     # @param [Array<Subscription>] subscriptions The subscriptions to start.
     # @param [Hash] options The options to start the subscriptions with. See {Subscription#start} for details on the
     #        supported options.
     #
     # @return [Array<LightstreamerError, nil>]
-    def bulk_subscription_start(subscriptions, options = {})
-      request_bodies = subscriptions.map do |subscription|
-        args = subscription.start_control_request_args options
-        PostRequest.request_body({ LS_session: session_id, LS_op: args.first }.merge(args[1]))
+    def start_subscriptions(subscriptions, options = {})
+      details = subscriptions.map { |subscription| { subscription: subscription, action: :start, options: options } }
+
+      perform_subscription_actions details
+    end
+
+    # This method performs {Subscription#stop} on all the passed subscriptions. Calling {Subscription#stop} on each
+    # subscription individually would also work but requires a separate POST request to be sent for every subscription,
+    # whereas this request stops all of the passed subscriptions in a single POST request which is significantly faster
+    # for a large number of subscriptions. The return value is an array with one entry per subscription and indicates
+    # the error state returned by the server for that subscription's stop request, or `nil` if no error occurred.
+    #
+    # @param [Array<Subscription>] subscriptions The subscriptions to stop.
+    #
+    # @return [Array<LightstreamerError, nil>]
+    def stop_subscriptions(subscriptions)
+      details = subscriptions.map { |subscription| { subscription: subscription, action: :stop } }
+
+      perform_subscription_actions details
+    end
+
+    # This method takes an array of subscriptions and actions to perform on those subscriptions. The supported actions
+    # are `:start`, `:unsilence` and `:stop`. Calling {Subscription#start}, {Subscription#unsilence} or
+    # {Subscription#stop} on each subscription individually would also work but requires a separate POST request to be
+    # sent for each action, whereas this request performs all of the specified actions in a single POST request which is
+    # significantly faster for a large number of actions. The return value is an array with one entry per subscription
+    # and indicates the error state returned by the server for that action, or `nil` if no error occurred. It will have
+    # the same number of entries as the passed `details` array.
+    #
+    # @param [Array<Hash>] details This array specifies the subscription operations to perform. Each entry must be a
+    #        hash containing a `:subscription` key specifying the {Subscription}, and an `:action` key specifying the
+    #        action to perform for the subscription: either `:start`, `:unsilence` or `:stop`. If `:action` is `:start`
+    #        then an `:options` key can be specified, and the supported options are documented on {Subscription#start}.
+    #
+    # @return [Array<LightstreamerError, nil>]
+    def perform_subscription_actions(details)
+      request_bodies = details.map do |hash|
+        PostRequest.request_body hash.fetch(:subscription).control_request_options(hash.fetch(:action), hash[:options])
       end
 
-      errors = PostRequest.bulk_execute control_request_url, request_bodies
+      errors = PostRequest.execute_multiple control_request_url, request_bodies
 
-      # Set @active to true on all subscriptions that did not have an error
+      # Update the state of subscriptions that did not have an error
       errors.each_with_index do |error, index|
-        subscriptions[index].instance_variable_set :@active, true if error.nil?
+        details[index][:subscription].after_control_request details[index][:action] unless error
       end
     end
 
@@ -183,7 +216,7 @@ module Lightstreamer
     #
     # @param [Float] bandwidth The new requested maximum bandwidth, expressed in kbps.
     def requested_maximum_bandwidth=(bandwidth)
-      control_request :constrain, LS_requested_max_bandwidth: bandwidth if connected?
+      control_request LS_op: :constrain, LS_requested_max_bandwidth: bandwidth if connected?
       @requested_maximum_bandwidth = bandwidth.to_f
     end
 
@@ -228,10 +261,9 @@ module Lightstreamer
     # Sends a request to this session's control connection. If an error occurs then a {LightstreamerError} subclass will
     # be raised.
     #
-    # @param [Symbol] operation The control operation to perform.
-    # @param [Hash] options The options to send with the control request.
-    def control_request(operation, options = {})
-      PostRequest.execute control_request_url, options.merge(LS_session: session_id, LS_op: operation)
+    # @param [Hash] query The details of the control request query.
+    def control_request(query = {})
+      PostRequest.execute control_request_url, query.merge(LS_session: session_id)
     end
 
     # Adds the passed block to the list of callbacks that will be run when this session encounters an error on its

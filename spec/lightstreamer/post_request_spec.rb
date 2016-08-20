@@ -40,12 +40,12 @@ describe Lightstreamer::PostRequest do
     end
   end
 
-  it 'sends bulk requests and reports any errors' do
+  it 'sends multiple requests and reports any errors' do
     expect(Excon).to receive(:post)
       .with('http://a.com', body: "A\r\nB\r\nC", connect_timeout: 15, expects: 200)
       .and_return(build_response("OK\r\nERROR\r\n2\r\nERROR MESSAGE\r\nINVALID RESPONSE\r\n"))
 
-    errors = Lightstreamer::PostRequest.bulk_execute 'http://a.com', %w(A B C)
+    errors = Lightstreamer::PostRequest.execute_multiple 'http://a.com', %w(A B C)
 
     expect(errors.size).to eq(3)
     expect(errors[0]).to be nil
@@ -54,13 +54,13 @@ describe Lightstreamer::PostRequest do
     expect(errors[2].message).to eq('INVALID RESPONSE')
   end
 
-  it 'handles invalid responses for bulk requests' do
+  it 'handles invalid responses for multiple requests' do
     expect(Excon).to receive(:post)
       .with('http://a.com', body: "body1\r\nbody2", connect_timeout: 15, expects: 200)
       .and_return(build_response("OK\r\nOK\r\nOK\r\n"))
 
     expect do
-      Lightstreamer::PostRequest.bulk_execute 'http://a.com', %w(body1 body2)
+      Lightstreamer::PostRequest.execute_multiple 'http://a.com', %w(body1 body2)
     end.to raise_error(Lightstreamer::LightstreamerError)
   end
 end

@@ -1,5 +1,5 @@
 module Lightstreamer
-  # This module contains helper methods for sending single and bulk POST requests to a Lightstreamer server and
+  # This module contains helper methods for sending single and multiple POST requests to a Lightstreamer server and
   # handling the possible error responses.
   #
   # @private
@@ -12,7 +12,7 @@ module Lightstreamer
     # @param [String] url The URL to send the POST request to.
     # @param [Hash] query The POST request's query params.
     def execute(url, query)
-      errors = bulk_execute url, [request_body(query)]
+      errors = execute_multiple url, [request_body(query)]
       raise errors.first if errors.first
     end
 
@@ -26,7 +26,7 @@ module Lightstreamer
     #
     # @return [Array<LightstreamerError, nil>] The execution result of each of the passed bodies. If an entry is `nil`
     #         then no error occurred when executing that body.
-    def bulk_execute(url, bodies)
+    def execute_multiple(url, bodies)
       response = Excon.post url, body: bodies.join("\r\n"), expects: 200, connect_timeout: 15
 
       response_lines = response.body.split("\n").map(&:strip)

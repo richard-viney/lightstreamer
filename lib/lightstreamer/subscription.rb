@@ -76,7 +76,7 @@ module Lightstreamer
     #
     # @private
     def id
-      @id ||= ID_GENERATOR.next
+      @id ||= self.class.next_id
     end
 
     # Starts streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
@@ -97,38 +97,23 @@ module Lightstreamer
     def start(options = {})
       return if @active
 
-      session.control_request(*start_control_request_args(options))
-      @active = true
-    end
-
-    # Returns the arguments to pass to to {Session#control_request} in order to start this subscription with the given
-    # options.
-    #
-    # @param [Hash] options The options to start the subscription with.
-    #
-    # @private
-    def start_control_request_args(options = {})
-      operation = options[:silent] ? :add_silent : :add
-
-      options = { LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items, LS_schema: fields, LS_selector: selector,
-                  LS_data_adapter: data_adapter, LS_requested_max_frequency: maximum_update_frequency,
-                  LS_snapshot: options.fetch(:snapshot, false) }
-
-      [operation, options]
+      session.control_request control_request_options(:start, options)
+      after_control_request :start
     end
 
     # Unsilences this subscription if it was initially started in silent mode by passing `silent: true` to {#start}. If
     # this subscription was not started in silent mode then this method has no effect. If an error occurs then a
     # {LightstreamerError} subclass will be raised.
     def unsilence
-      session.control_request :start, LS_table: id
+      session.control_request control_request_options(:unsilence)
+      after_control_request :unsilence
     end
 
     # Stops streaming data for this Lightstreamer subscription. If an error occurs then a {LightstreamerError} subclass
     # will be raised.
     def stop
-      session.control_request :delete, LS_table: id if @active
-      @active = false
+      session.control_request control_request_options(:stop) if @active
+      after_control_request :stop
     end
 
     # Sets this subscription's maximum update frequency. This can be done while a subscription is streaming data in
@@ -140,7 +125,7 @@ module Lightstreamer
     #        details.
     def maximum_update_frequency=(new_frequency)
       new_frequency = sanitize_frequency new_frequency
-      session.control_request :reconf, LS_table: id, LS_requested_max_frequency: new_frequency if @active
+      session.control_request LS_op: :reconf, LS_table: id, LS_requested_max_frequency: new_frequency if @active
       @maximum_update_frequency = new_frequency
     end
 
@@ -231,9 +216,39 @@ module Lightstreamer
       return true if process_end_of_snapshot_message EndOfSnapshotMessage.parse(line, id, items)
     end
 
+    # Returns the control request arguments to use to perform the specified action on this subscription.
+    #
+    # @private
+    def control_request_options(action, options = nil)
+      case action.to_sym
+      when :start
+        start_control_request_options options
+      when :unsilence
+        { LS_session: session.session_id, LS_op: :start, LS_table: id }
+      when :stop
+        { LS_session: session.session_id, LS_op: :delete, LS_table: id }
+      end
+    end
+
+    # Performs any required updates to this subscription's state after a control request succeeds.
+    #
+    # @private
+    def after_control_request(action)
+      @active = true if action == :start
+      @active = false if action == :stop
+    end
+
     private
 
-    ID_GENERATOR = (1..Float::INFINITY).each
+    class << self
+      # Returns the next unique numeric subscription ID.
+      #
+      # @private
+      def next_id
+        @next_id ||= 0
+        @next_id += 1
+      end
+    end
 
     def sanitize_frequency(frequency)
       frequency.to_s == 'unfiltered' ? :unfiltered : frequency.to_f
@@ -264,6 +279,16 @@ module Lightstreamer
       @callbacks.fetch(callback_type).each { |callback| callback.call self, *args }
 
       true
+    end
+
+    def start_control_request_options(options)
+      options ||= {}
+
+      operation = options[:silent] ? :add_silent : :add
+
+      { LS_session: session.session_id, LS_op: operation, LS_table: id, LS_mode: mode.to_s.upcase, LS_id: items,
+        LS_schema: fields, LS_selector: selector, LS_snapshot: options.fetch(:snapshot, false),
+        LS_requested_max_frequency: maximum_update_frequency, LS_data_adapter: data_adapter }
     end
   end
 end

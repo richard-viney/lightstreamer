@@ -20,7 +20,7 @@ Includes support for:
 - Silent subscriptions
 - Item snapshots and end-of-snapshot notifications
 - Unfiltered subscriptions and overflow notifications
-- Bulk subscription creation
+- Performing multiple subscription actions in a single request
 - Synchronous and asynchronous message sending
 - Detailed error reporting and error handling callbacks
 

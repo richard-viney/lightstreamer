@@ -1,5 +1,5 @@
 describe Lightstreamer::Subscription do
-  let(:session) { instance_double 'Lightstreamer::Session' }
+  let(:session) { instance_double 'Lightstreamer::Session', session_id: 'id' }
   let(:subscription) { build :subscription, session: session, items: [:item1, :item2], fields: [:field1, :field2] }
 
   it 'assigns consecutive unique ids to subscriptions' do
@@ -20,20 +20,24 @@ describe Lightstreamer::Subscription do
 
   it 'starts and stops a subscription' do
     expect(session).to receive(:control_request)
-      .with(:add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_schema: [:field1, :field2],
-                  LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_selector: nil, LS_snapshot: false)
-    expect(session).to receive(:control_request).with(:delete, LS_table: subscription.id)
+      .with(LS_session: 'id', LS_op: :add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2],
+            LS_snapshot: false, LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+            LS_selector: nil)
+    expect(session).to receive(:control_request).with(LS_session: 'id', LS_op: :delete, LS_table: subscription.id)
 
+    expect(subscription.active).to be_falsey
     subscription.start
+    expect(subscription.active).to be_truthy
     subscription.stop
+    expect(subscription.active).to be_falsey
   end
 
   it 'starts and unsilences a silent subscription' do
     expect(session).to receive(:control_request)
-      .with(:add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2], LS_selector: nil,
-                         LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
-                         LS_snapshot: true)
-    expect(session).to receive(:control_request).with(:start, LS_table: subscription.id)
+      .with(LS_session: 'id', LS_op: :add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: [:item1, :item2],
+            LS_selector: nil, LS_schema: [:field1, :field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+            LS_snapshot: true)
+    expect(session).to receive(:control_request).with(LS_session: 'id', LS_op: :start, LS_table: subscription.id)
 
     subscription.start silent: true, snapshot: true
     subscription.unsilence
@@ -41,12 +45,13 @@ describe Lightstreamer::Subscription do
 
   it 'changes the maximum update frequency' do
     subscription.instance_variable_set :@active, true
-    expect(session).to receive(:control_request).with(:reconf, LS_table: subscription.id, LS_requested_max_frequency: 2)
+    expect(session).to receive(:control_request).with(LS_op: :reconf, LS_table: subscription.id,
+                                                      LS_requested_max_frequency: 2)
     subscription.maximum_update_frequency = 2
     expect(subscription.maximum_update_frequency).to eq(2)
 
-    expect(session).to receive(:control_request).with(:reconf, LS_table: subscription.id,
-                                                               LS_requested_max_frequency: :unfiltered)
+    expect(session).to receive(:control_request).with(LS_op: :reconf, LS_table: subscription.id,
+                                                      LS_requested_max_frequency: :unfiltered)
     subscription.maximum_update_frequency = 'unfiltered'
     expect(subscription.maximum_update_frequency).to eq(:unfiltered)
   end

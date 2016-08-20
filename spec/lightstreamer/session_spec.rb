@@ -20,7 +20,7 @@ describe Lightstreamer::Session do
 
     recurring_line = "#{subscription.id},1|test"
 
-    expect(session).to receive(:control_request).with(:destroy) { recurring_line = nil }
+    expect(session).to receive(:control_request).with(LS_op: :destroy) { recurring_line = nil }
 
     expect(stream_connection).to receive(:read_line).and_return("#{subscription.id},1|test")
     expect(stream_connection).to receive(:read_line).and_return('invalid data')
@@ -83,13 +83,13 @@ describe Lightstreamer::Session do
     end
 
     it 'rebinds the stream connection' do
-      expect(session).to receive(:control_request).with(:force_rebind)
+      expect(session).to receive(:control_request).with(LS_op: :force_rebind)
       session.force_rebind
     end
 
     it 'sets the requested maximum bandwidth' do
       expect(session.requested_maximum_bandwidth).to eq(10)
-      expect(session).to receive(:control_request).with(:constrain, LS_requested_max_bandwidth: 15)
+      expect(session).to receive(:control_request).with(LS_op: :constrain, LS_requested_max_bandwidth: 15)
       session.requested_maximum_bandwidth = 15
       expect(session.requested_maximum_bandwidth).to eq(15)
     end
@@ -113,38 +113,57 @@ describe Lightstreamer::Session do
       expect(Lightstreamer::PostRequest).to receive(:execute)
         .with('http://a.com/lightstreamer/control.txt', LS_session: 'session', LS_op: :operation, test: 1)
 
-      session.control_request :operation, test: 1
+      session.control_request LS_op: :operation, test: 1
     end
 
-    it 'performs a bulk subscription start' do
-      second_subscription = build :subscription
+    it 'starts multiple subscriptions at once' do
+      expect(session).to receive(:perform_subscription_actions)
+        .with([{ subscription: 1, action: :start, options: { snapshot: true } },
+               { subscription: 2, action: :start, options: { snapshot: true } }])
+        .and_return([nil, nil])
 
-      expect(subscription.active).to be_falsey
-      expect(second_subscription.active).to be_falsey
+      expect(session.start_subscriptions([1, 2], snapshot: true)).to eq([nil, nil])
+    end
+
+    it 'stops multiple subscriptions at once' do
+      expect(session).to receive(:perform_subscription_actions)
+        .with([{ subscription: 1, action: :stop }, { subscription: 2, action: :stop }]).and_return([nil, nil])
+
+      expect(session.stop_subscriptions([1, 2])).to eq([nil, nil])
+    end
+
+    it 'performs a set of subscription actions' do
+      subscriptions = [subscription, build(:subscription, session: session), build(:subscription, session: session)]
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %w(item),
+        .with(LS_session: 'session', LS_op: :add, LS_table: subscriptions[0].id, LS_mode: 'MERGE', LS_id: %w(item),
               LS_schema: %w(field), LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
-              LS_snapshot: true)
+              LS_snapshot: false)
         .and_return('body1')
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :add, LS_table: second_subscription.id, LS_mode: 'MERGE', LS_schema: [],
-              LS_id: [], LS_selector: nil, LS_data_adapter: nil, LS_requested_max_frequency: 0.0, LS_snapshot: true)
+        .with(LS_session: 'session', LS_op: :start, LS_table: subscriptions[1].id)
         .and_return('body2')
 
-      expect(Lightstreamer::PostRequest).to receive(:bulk_execute)
-        .with('http://a.com/lightstreamer/control.txt', %w(body1 body2))
-        .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new])
+      expect(Lightstreamer::PostRequest).to receive(:request_body)
+        .with(LS_session: 'session', LS_op: :delete, LS_table: subscriptions[2].id)
+        .and_return('body3')
 
-      errors = session.bulk_subscription_start [subscription, second_subscription], snapshot: true
+      expect(Lightstreamer::PostRequest).to receive(:execute_multiple)
+        .with('http://a.com/lightstreamer/control.txt', %w(body1 body2 body3))
+        .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new, nil])
 
-      expect(errors.size).to eq(2)
+      errors = session.perform_subscription_actions [{ subscription: subscriptions[0], action: :start },
+                                                     { subscription: subscriptions[1], action: :unsilence },
+                                                     { subscription: subscriptions[2], action: :stop }]
+
+      expect(errors.size).to eq(3)
       expect(errors[0]).to be nil
       expect(errors[1]).to be_a(Lightstreamer::Errors::InvalidDataAdapterError)
+      expect(errors[2]).to be nil
 
-      expect(subscription.active).to be true
-      expect(second_subscription.active).to be_falsey
+      expect(subscriptions[0].active).to be_truthy
+      expect(subscriptions[2].active).to be_falsey
     end
   end
 end

@@ -2,7 +2,11 @@
 
 ### 0.11 — Unreleased
 
-- 
+- Added `Lightstreamer::Session#stop_subscriptions` for stopping multiple subscriptions in one request
+- Renamed `Lightstreamer::Session#bulk_subscription_start` to `Lightstreamer::Session#start_subscriptions`
+- Added support for combining all subscription actions via `Lightstreamer::Session#perform_subscription_actions`
+  which allows subscription start, unsilence and stop requests to be easily bundled together
+- Fixed `Subscription#id` only being callable on the main thread
 
 ### 0.10 — August 5, 2016
 
