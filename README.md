@@ -40,8 +40,8 @@ $ gem install lightstreamer
 
 The two primary classes that make up the public API are:
 
-- [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Session)
-- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/Lightstreamer/Subscription)
+- [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/master/Lightstreamer/Session)
+- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/master/Lightstreamer/Subscription)
 
 The following code demonstrates how to create a Lightstreamer session, build a subscription, then use a thread-safe
 queue to print streaming output as it arrives.
