@@ -154,7 +154,7 @@ module Lightstreamer
 
     # This method performs {Subscription#start} on all the passed subscriptions. Calling {Subscription#start} on each
     # subscription individually would also work but requires a separate POST request to be sent for every subscription,
-    # whereas this request starts all of the passed subscriptions in a single POST request which is significantly faster
+    # whereas this method starts all of the passed subscriptions in a single POST request which is significantly faster
     # for a large number of subscriptions. The return value is an array with one entry per subscription and indicates
     # the error state returned by the server for that subscription's start request, or `nil` if no error occurred.
     #
@@ -171,7 +171,7 @@ module Lightstreamer
 
     # This method performs {Subscription#stop} on all the passed subscriptions. Calling {Subscription#stop} on each
     # subscription individually would also work but requires a separate POST request to be sent for every subscription,
-    # whereas this request stops all of the passed subscriptions in a single POST request which is significantly faster
+    # whereas this method stops all of the passed subscriptions in a single POST request which is significantly faster
     # for a large number of subscriptions. The return value is an array with one entry per subscription and indicates
     # the error state returned by the server for that subscription's stop request, or `nil` if no error occurred.
     #
@@ -187,19 +187,19 @@ module Lightstreamer
     # This method takes an array of subscriptions and actions to perform on those subscriptions. The supported actions
     # are `:start`, `:unsilence` and `:stop`. Calling {Subscription#start}, {Subscription#unsilence} or
     # {Subscription#stop} on each subscription individually would also work but requires a separate POST request to be
-    # sent for each action, whereas this request performs all of the specified actions in a single POST request which is
-    # significantly faster for a large number of actions. The return value is an array with one entry per subscription
-    # and indicates the error state returned by the server for that action, or `nil` if no error occurred. It will have
-    # the same number of entries as the passed `details` array.
+    # sent for each action, whereas this method performs all of the specified actions in a single POST request which is
+    # significantly faster for a large number of actions. The return value is an array with one entry per action and
+    # indicates the error state returned by the server for that action, or `nil` if no error occurred. It will have the
+    # same number of entries as the passed `details` array.
     #
-    # @param [Array<Hash>] details This array specifies the subscription operations to perform. Each entry must be a
-    #        hash containing a `:subscription` key specifying the {Subscription}, and an `:action` key specifying the
-    #        action to perform for the subscription: either `:start`, `:unsilence` or `:stop`. If `:action` is `:start`
-    #        then an `:options` key can be specified, and the supported options are documented on {Subscription#start}.
+    # @param [Array<Hash>] actions This array describes the subscription actions to perform. Each entry must be a hash
+    #        containing a `:subscription` key specifying the {Subscription}, and an `:action` key specifying the action
+    #        to perform on the subscription (either `:start`, `:unsilence` or `:stop`). If `:action` is `:start` then an
+    #        `:options` key can be specified, and the supported options are the same as for {Subscription#start}.
     #
     # @return [Array<LightstreamerError, nil>]
-    def perform_subscription_actions(details)
-      request_bodies = details.map do |hash|
+    def perform_subscription_actions(actions)
+      request_bodies = actions.map do |hash|
         PostRequest.request_body hash.fetch(:subscription).control_request_options(hash.fetch(:action), hash[:options])
       end
 
@@ -207,7 +207,7 @@ module Lightstreamer
 
       # Update the state of subscriptions that did not have an error
       errors.each_with_index do |error, index|
-        details[index][:subscription].after_control_request details[index][:action] unless error
+        actions[index][:subscription].after_control_request actions[index][:action] unless error
       end
     end
 
