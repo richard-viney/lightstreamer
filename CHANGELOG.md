@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.13 — Unreleased
+
+- 
+
 ### 0.12 — August 20, 2016
 
 - Added `Lightstreamer::Session#remove_subscriptions`
