@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.12 — Unreleased
+### 0.12 — August 20, 2016
 
 - Added `Lightstreamer::Session#remove_subscriptions`
 - Removed `Lightstreamer::Subscription#session`, subscriptions now hold a weak reference to their session in order to
