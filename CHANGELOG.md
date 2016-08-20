@@ -1,5 +1,9 @@
 # Lightstreamer Changelog
 
+### 0.12 — Unreleased
+
+- 
+
 ### 0.11 — August 20, 2016
 
 - Added `Lightstreamer::Session#stop_subscriptions` for stopping multiple subscriptions in one request
