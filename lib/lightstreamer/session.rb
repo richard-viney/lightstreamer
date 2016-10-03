@@ -33,10 +33,10 @@ module Lightstreamer
     # Whether polling mode is enabled. By default long-running HTTP connections will be used to stream incoming data,
     # but if polling is enabled then repeated short polling requests will be used instead. Polling may work better if
     # there is intermediate buffering on the network that affects timely delivery of data on long-running streaming
-    # connections. The polling mode for a connected session can be changed by setting {#polling_enabled} and then
+    # connections. Polling mode can be turned off and on for a connected session by setting {#polling_enabled} and then
     # calling {#force_rebind}.
     #
-    # @return [Boolean]
+    # @return [Boolean] whether polling mode is enabled.
     attr_accessor :polling_enabled
 
     # Initializes this new Lightstreamer session with the passed options.
