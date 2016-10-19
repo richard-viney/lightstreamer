@@ -1,8 +1,8 @@
 # Lightstreamer Changelog
 
-### 0.13 — Unreleased
+### 0.13 — October 19, 2016
 
-- 
+- Fixed documentation warnings found by Inch CI
 
 ### 0.12 — August 20, 2016
 
