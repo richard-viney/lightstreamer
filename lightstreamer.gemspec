@@ -2,15 +2,15 @@ $LOAD_PATH.push File.expand_path('../lib', __FILE__)
 require 'lightstreamer/version'
 
 Gem::Specification.new do |s|
-  s.name        = 'lightstreamer'
-  s.version     = Lightstreamer::VERSION
-  s.platform    = Gem::Platform::RUBY
-  s.license     = 'MIT'
-  s.summary     = 'Library and command-line client for accessing a Lightstreamer server.'
-  s.homepage    = 'https://github.com/rviney/lightstreamer'
-  s.author      = 'Richard Viney'
-  s.email       = 'richard.viney@gmail.com'
-  s.files       = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
+  s.name = 'lightstreamer'
+  s.version = Lightstreamer::VERSION
+  s.platform = Gem::Platform::RUBY
+  s.license = 'MIT'
+  s.summary = 'Library and command-line client for accessing a Lightstreamer server.'
+  s.homepage = 'https://github.com/rviney/lightstreamer'
+  s.author = 'Richard Viney'
+  s.email = 'richard.viney@gmail.com'
+  s.files = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
   s.executables = ['lightstreamer']
 
   s.required_ruby_version = '>= 2.0'
@@ -31,6 +31,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'redcarpet', '~> 3.3'
   s.add_development_dependency 'rspec', '~> 3.5'
   s.add_development_dependency 'rspec-mocks', '~> 3.5'
-  s.add_development_dependency 'rubocop', '~> 0.42'
+  s.add_development_dependency 'rubocop', '~> 0.44'
   s.add_development_dependency 'yard', '~> 0.9'
 end
