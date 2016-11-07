@@ -128,7 +128,7 @@ module Lightstreamer
       @header = StreamConnectionHeader.new
 
       buffer = StreamBuffer.new
-      options[:response_block] = -> (data, _, _) { buffer.process data, &method(:process_stream_line) }
+      options[:response_block] = ->(data, _, _) { buffer.process data, &method(:process_stream_line) }
       options[:expects] = 200
 
       Excon.post url, options
