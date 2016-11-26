@@ -4,7 +4,7 @@ module Lightstreamer
   #
   # @private
   class SubscriptionItemData
-    # The current item data. Item data is a hash for all subscription modes except `:command` when it is an array.
+    # The current item data. Item data is a hash for all subscription modes except `:command`, for which it is an array.
     #
     # @return [Hash, Array, nil]
     attr_accessor :data

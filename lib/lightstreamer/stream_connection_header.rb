@@ -4,7 +4,7 @@ module Lightstreamer
   #
   # @private
   class StreamConnectionHeader
-    # If there was an error in the header then this value will be set to the error instance that should be raised in
+    # If there was an error in the header then this attribute will be set to the error instance that should be raised in
     # response.
     #
     # @return [LightstreamerError, nil]
