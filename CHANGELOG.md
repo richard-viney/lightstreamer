@@ -2,7 +2,8 @@
 
 ### 0.14 — Unreleased
 
-- Update to `codeclimate-test-reporter` 1.0
+- Increased required Ruby version to >= 2.2.2
+- Updated to `codeclimate-test-reporter` 1.0
 
 ### 0.13 — October 19, 2016
 

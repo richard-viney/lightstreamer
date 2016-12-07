@@ -13,17 +13,10 @@ Gem::Specification.new do |s|
   s.files = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
   s.executables = ['lightstreamer']
 
-  s.required_ruby_version = '>= 2.0'
+  s.required_ruby_version = '>= 2.2.2'
 
   s.add_runtime_dependency 'excon', '~> 0.51'
   s.add_runtime_dependency 'thor', '~> 0.19'
-
-  # Use Active Support 4 on Ruby versions prior to 2.2.2
-  if RUBY_VERSION =~ /^2\.((0|1)\.|2\.(0|1)$)/
-    s.add_development_dependency 'activesupport', '~> 4.2'
-  else
-    s.add_development_dependency 'activesupport', '~> 5.0'
-  end
 
   s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0'
   s.add_development_dependency 'factory_girl', '~> 4.7'
