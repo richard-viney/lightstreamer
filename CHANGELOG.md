@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.14 — Unreleased
+### 0.14 — December 7, 2016
 
 - Increased required Ruby version to >= 2.2.2
 - Updated to `codeclimate-test-reporter` 1.0
