@@ -19,7 +19,7 @@ describe Lightstreamer::StreamConnection do
       loop { params[:response_block].call "one\r\ntwo\r\n", nil, nil }
     end
 
-    stream_connection = Lightstreamer::StreamConnection.new session
+    stream_connection = described_class.new session
     stream_connection.connect
 
     expect(stream_connection.connected?).to be true
@@ -56,7 +56,7 @@ describe Lightstreamer::StreamConnection do
       sleep
     end
 
-    stream_connection = Lightstreamer::StreamConnection.new session
+    stream_connection = described_class.new session
     stream_connection.connect
 
     expect(stream_connection.connected?).to be true
@@ -82,7 +82,7 @@ describe Lightstreamer::StreamConnection do
       params[:response_block].call "one\r\ntwo\r\nEND\r\nthree\r\n", nil, nil
     end
 
-    stream_connection = Lightstreamer::StreamConnection.new session
+    stream_connection = described_class.new session
     stream_connection.connect
 
     stream_thread.run
@@ -98,7 +98,7 @@ describe Lightstreamer::StreamConnection do
   it 'handles an HTTP error on the stream thread' do
     expect(Excon).to receive(:post).and_raise(Excon::Error.new('message'))
 
-    expect { Lightstreamer::StreamConnection.new(session).connect }.to raise_error do |error|
+    expect { described_class.new(session).connect }.to raise_error do |error|
       expect(error).to be_a(Lightstreamer::Errors::ConnectionError)
       expect(error.message).to eq('message')
     end

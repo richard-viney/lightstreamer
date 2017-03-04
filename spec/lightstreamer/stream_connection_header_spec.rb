@@ -1,5 +1,5 @@
 describe Lightstreamer::StreamConnectionHeader do
-  let(:header) { Lightstreamer::StreamConnectionHeader.new }
+  let(:header) { described_class.new }
 
   it 'processes a success header' do
     expect(header.process_line('OK')).to be true

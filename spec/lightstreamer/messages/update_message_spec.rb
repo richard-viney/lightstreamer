@@ -19,9 +19,9 @@ describe Lightstreamer::UpdateMessage do
       # Invalid codepoint
       '18,1|||\uEF00' => { item_index: 0, data: { field3: '' } }
     }.each do |line, result|
-      message = Lightstreamer::UpdateMessage.parse line, 18, items, fields
+      message = described_class.parse line, 18, items, fields
 
-      expect(message).to_not be nil
+      expect(message).not_to be nil
       expect(message.item_index).to eq(result[:item_index])
       expect(message.data).to eq(result[:data])
     end
@@ -33,7 +33,7 @@ describe Lightstreamer::UpdateMessage do
       '1,1||',
       '18,2|'
     ].each do |line|
-      expect(Lightstreamer::UpdateMessage.parse(line, 18, items, fields)).to be nil
+      expect(described_class.parse(line, 18, items, fields)).to be nil
     end
   end
 end

@@ -1,9 +1,9 @@
 describe Lightstreamer::CLI::Main do
   let(:cli) do
-    Lightstreamer::CLI::Main.new [], server_url: 'http://a.com', username: 'username', password: 'password',
-                                     adapter_set: 'adapter-set', requested_maximum_bandwidth: nil,
-                                     data_adapter: 'adapter', items: ['item'], fields: ['field'], mode: :merge,
-                                     polling_enabled: false
+    described_class.new [], server_url: 'http://a.com', username: 'username', password: 'password',
+                            adapter_set: 'adapter-set', requested_maximum_bandwidth: nil,
+                            data_adapter: 'adapter', items: ['item'], fields: ['field'], mode: :merge,
+                            polling_enabled: false
   end
 
   let(:session) { instance_double 'Lightstreamer::Session' }

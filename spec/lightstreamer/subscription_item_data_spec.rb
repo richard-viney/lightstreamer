@@ -1,5 +1,5 @@
 describe Lightstreamer::SubscriptionItemData do
-  let(:item_data) { Lightstreamer::SubscriptionItemData.new }
+  let(:item_data) { described_class.new }
 
   it 'sets new data when in command mode' do
     item_data.set_data [], :command

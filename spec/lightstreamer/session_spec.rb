@@ -1,7 +1,7 @@
 describe Lightstreamer::Session do
   let(:session) do
-    Lightstreamer::Session.new server_url: 'http://test.com', username: 'username', password: 'password',
-                               adapter_set: 'adapter-set', requested_maximum_bandwidth: 10
+    described_class.new server_url: 'http://test.com', username: 'username', password: 'password',
+                        adapter_set: 'adapter-set', requested_maximum_bandwidth: 10
   end
 
   let(:stream_connection) do
@@ -73,7 +73,7 @@ describe Lightstreamer::Session do
 
   it 'removes a subscription' do
     expect(session).to receive(:stop_subscriptions).with([subscription]).and_return([nil])
-    expect { session.remove_subscription subscription }.to_not raise_error
+    expect { session.remove_subscription subscription }.not_to raise_error
 
     expect(session).to receive(:stop_subscriptions)
       .with([subscription])
