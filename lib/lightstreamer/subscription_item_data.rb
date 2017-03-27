@@ -14,7 +14,7 @@ module Lightstreamer
     # @param [Array, Hash] new_data The new data for the item.
     # @param [:command, :merge] mode The subscription mode.
     def set_data(new_data, mode)
-      raise ArgumentError, "Data can't be set unless mode is :command or :merge" unless [:command, :merge].include? mode
+      raise ArgumentError, "Data can't be set unless mode is :command or :merge" unless %i(command merge).include? mode
       raise ArgumentError, 'Data must be a hash when in merge mode' if mode == :merge && !new_data.is_a?(Hash)
 
       validate_rows new_data if mode == :command
