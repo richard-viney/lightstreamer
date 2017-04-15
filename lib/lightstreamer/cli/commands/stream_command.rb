@@ -14,7 +14,7 @@ module Lightstreamer
       option :data_adapter, desc: 'The name of the data adapter to stream data from'
       option :items, type: :array, required: true, desc: 'The names of the item(s) to stream'
       option :fields, type: :array, required: true, desc: 'The field(s) to stream'
-      option :mode, enum: %w(command distinct merge raw), desc: 'The operation mode'
+      option :mode, enum: %w[command distinct merge raw], desc: 'The operation mode'
       option :selector, desc: 'The selector for table items'
       option :snapshot, type: :boolean, desc: 'Whether to send snapshot data for the items'
       option :maximum_update_frequency, desc: 'The maximum number of updates per second for each item'

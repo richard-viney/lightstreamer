@@ -1,6 +1,6 @@
 describe Lightstreamer::UpdateMessage do
-  let(:items) { %i(item1 item2 item3) }
-  let(:fields) { %i(field1 field2 field3) }
+  let(:items) { %i[item1 item2 item3] }
+  let(:fields) { %i[field1 field2 field3] }
 
   it 'parses valid update messages' do
     {

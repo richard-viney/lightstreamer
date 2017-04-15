@@ -8,7 +8,7 @@ describe Lightstreamer::PostRequest do
       .with('http://a.com', body: 'number=1&items=a+b', expects: 200, connect_timeout: 15)
       .and_return(build_response("OK\r\n"))
 
-    described_class.execute 'http://a.com', number: 1, items: %w(a b), ignore_me: nil
+    described_class.execute 'http://a.com', number: 1, items: %w[a b], ignore_me: nil
   end
 
   it 'handles a standard error response to a single request' do
@@ -45,7 +45,7 @@ describe Lightstreamer::PostRequest do
       .with('http://a.com', body: "A\r\nB\r\nC", connect_timeout: 15, expects: 200)
       .and_return(build_response("OK\r\nERROR\r\n2\r\nERROR MESSAGE\r\nINVALID RESPONSE\r\n"))
 
-    errors = described_class.execute_multiple 'http://a.com', %w(A B C)
+    errors = described_class.execute_multiple 'http://a.com', %w[A B C]
 
     expect(errors.size).to eq(3)
     expect(errors[0]).to be nil
@@ -60,7 +60,7 @@ describe Lightstreamer::PostRequest do
       .and_return(build_response("OK\r\nOK\r\nOK\r\n"))
 
     expect do
-      described_class.execute_multiple 'http://a.com', %w(body1 body2)
+      described_class.execute_multiple 'http://a.com', %w[body1 body2]
     end.to raise_error(Lightstreamer::LightstreamerError)
   end
 end

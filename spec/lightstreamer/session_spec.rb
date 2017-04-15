@@ -146,8 +146,8 @@ describe Lightstreamer::Session do
       subscriptions = [subscription, build(:subscription, session: session), build(:subscription, session: session)]
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :add, LS_table: subscriptions[0].id, LS_mode: 'MERGE', LS_id: %w(item),
-              LS_schema: %w(field), LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+        .with(LS_session: 'session', LS_op: :add, LS_table: subscriptions[0].id, LS_mode: 'MERGE', LS_id: %w[item],
+              LS_schema: %w[field], LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
               LS_snapshot: false)
         .and_return('body1')
 
@@ -160,7 +160,7 @@ describe Lightstreamer::Session do
         .and_return('body3')
 
       expect(Lightstreamer::PostRequest).to receive(:execute_multiple)
-        .with('http://a.com/lightstreamer/control.txt', %w(body1 body2 body3))
+        .with('http://a.com/lightstreamer/control.txt', %w[body1 body2 body3])
         .and_return([nil, Lightstreamer::Errors::InvalidDataAdapterError.new, nil])
 
       errors = session.perform_subscription_actions [{ subscription: subscriptions[0], action: :start },
