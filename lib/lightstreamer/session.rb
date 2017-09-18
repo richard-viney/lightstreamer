@@ -73,7 +73,7 @@ module Lightstreamer
       @stream_connection.connect
 
       create_processing_thread
-    rescue
+    rescue StandardError
       @stream_connection = nil
       raise
     end
