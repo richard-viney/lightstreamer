@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.license = 'MIT'
   s.summary = 'Library and command-line client for accessing a Lightstreamer server.'
-  s.homepage = 'https://github.com/rviney/lightstreamer'
+  s.homepage = 'https://github.com/richard-viney/lightstreamer'
   s.author = 'Richard Viney'
   s.email = 'richard.viney@gmail.com'
   s.files = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'thor', '~> 0.19'
 
   s.add_development_dependency 'codeclimate-test-reporter', '~> 1.0'
-  s.add_development_dependency 'factory_girl', '~> 4.7'
+  s.add_development_dependency 'factory_bot', '~> 4.8'
   s.add_development_dependency 'github-markup', '~> 1.4'
   s.add_development_dependency 'redcarpet', '~> 3.3'
   s.add_development_dependency 'rspec', '~> 3.6'

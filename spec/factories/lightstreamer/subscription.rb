@@ -1,4 +1,4 @@
-FactoryGirl.define do
+FactoryBot.define do
   factory :subscription, class: Lightstreamer::Subscription do
     session nil
     items []

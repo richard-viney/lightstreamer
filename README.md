@@ -40,8 +40,8 @@ $ gem install lightstreamer
 
 The two primary classes that make up the public API are:
 
-- [`Lightstreamer::Session`](http://www.rubydoc.info/github/rviney/lightstreamer/master/Lightstreamer/Session)
-- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/rviney/lightstreamer/master/Lightstreamer/Subscription)
+- [`Lightstreamer::Session`](http://www.rubydoc.info/github/richard-viney/lightstreamer/master/Lightstreamer/Session)
+- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/richard-viney/lightstreamer/master/Lightstreamer/Subscription)
 
 The following code demonstrates how to create a Lightstreamer session, build a subscription, then use a thread-safe
 queue to print streaming output as it arrives.
@@ -106,7 +106,7 @@ lightstreamer help stream
 
 ## Documentation
 
-API documentation is available [here](http://www.rubydoc.info/github/rviney/lightstreamer/master).
+API documentation is available [here](http://www.rubydoc.info/github/richard-viney/lightstreamer/master).
 
 ## Contributors
 
@@ -114,15 +114,15 @@ Gem created by Richard Viney. All contributions welcome.
 
 [gem-link]: https://rubygems.org/gems/lightstreamer
 [gem-badge]: https://badge.fury.io/rb/lightstreamer.svg
-[travis-ci-link]: http://travis-ci.org/rviney/lightstreamer
-[travis-ci-badge]: https://travis-ci.org/rviney/lightstreamer.svg?branch=master
-[test-coverage-link]: https://codeclimate.com/github/rviney/lightstreamer/coverage
-[test-coverage-badge]: https://codeclimate.com/github/rviney/lightstreamer/badges/coverage.svg
-[code-climate-link]: https://codeclimate.com/github/rviney/lightstreamer
-[code-climate-badge]: https://codeclimate.com/github/rviney/lightstreamer/badges/gpa.svg
-[dependencies-link]: https://gemnasium.com/rviney/lightstreamer
-[dependencies-badge]: https://gemnasium.com/rviney/lightstreamer.svg
-[documentation-link]: https://inch-ci.org/github/rviney/lightstreamer
-[documentation-badge]: https://inch-ci.org/github/rviney/lightstreamer.svg?branch=master
-[license-link]: https://github.com/rviney/lightstreamer/blob/master/LICENSE.md
+[travis-ci-link]: http://travis-ci.org/richard-viney/lightstreamer
+[travis-ci-badge]: https://travis-ci.org/richard-viney/lightstreamer.svg?branch=master
+[test-coverage-link]: https://codeclimate.com/github/richard-viney/lightstreamer/coverage
+[test-coverage-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/coverage.svg
+[code-climate-link]: https://codeclimate.com/github/richard-viney/lightstreamer
+[code-climate-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/gpa.svg
+[dependencies-link]: https://gemnasium.com/richard-viney/lightstreamer
+[dependencies-badge]: https://gemnasium.com/richard-viney/lightstreamer.svg
+[documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer
+[documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=master
+[license-link]: https://github.com/richard-viney/lightstreamer/blob/master/LICENSE.md
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
