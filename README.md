@@ -4,7 +4,6 @@
 [![Build Status][travis-ci-badge]][travis-ci-link]
 [![Test Coverage][test-coverage-badge]][test-coverage-link]
 [![Code Climate][code-climate-badge]][code-climate-link]
-[![Dependencies][dependencies-badge]][dependencies-link]
 [![Documentation][documentation-badge]][documentation-link]
 [![License][license-badge]][license-link]
 
@@ -120,8 +119,6 @@ Gem created by Richard Viney. All contributions welcome.
 [test-coverage-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/coverage.svg
 [code-climate-link]: https://codeclimate.com/github/richard-viney/lightstreamer
 [code-climate-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/gpa.svg
-[dependencies-link]: https://gemnasium.com/richard-viney/lightstreamer
-[dependencies-badge]: https://gemnasium.com/richard-viney/lightstreamer.svg
 [documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer
 [documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=master
 [license-link]: https://github.com/richard-viney/lightstreamer/blob/master/LICENSE.md
