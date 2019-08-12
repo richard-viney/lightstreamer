@@ -163,7 +163,7 @@ module Lightstreamer
       #
       # @param [String, Fixnum, nil] cause_code See {#cause_code} for details.
       def initialize(cause_code)
-        @cause_code = cause_code && cause_code.to_i
+        @cause_code = cause_code&.to_i
         super()
       end
     end

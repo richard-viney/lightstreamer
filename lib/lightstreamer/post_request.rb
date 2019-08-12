@@ -37,8 +37,8 @@ module Lightstreamer
       raise LightstreamerError if errors.size != bodies.size
 
       errors
-    rescue Excon::Error => error
-      raise Errors::ConnectionError, error.message
+    rescue Excon::Error => e
+      raise Errors::ConnectionError, e.message
     end
 
     # Returns the request body to send for a POST request with the given options.
@@ -51,6 +51,7 @@ module Lightstreamer
 
       query.each do |key, value|
         next if value.nil?
+
         value = value.map(&:to_s).join(' ') if value.is_a? Array
         params[key] = value
       end

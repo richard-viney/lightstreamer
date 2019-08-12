@@ -89,7 +89,7 @@ module Lightstreamer
     #
     # @return [String, nil]
     def session_id
-      @stream_connection && @stream_connection.session_id
+      @stream_connection&.session_id
     end
 
     # Disconnects this Lightstreamer session and terminates the session on the server. All worker threads are exited,
@@ -97,10 +97,10 @@ module Lightstreamer
     def disconnect
       control_request LS_op: :destroy if @stream_connection
 
-      @processing_thread.join 5 if @processing_thread
+      @processing_thread&.join 5
     ensure
-      @stream_connection.disconnect if @stream_connection
-      @processing_thread.exit if @processing_thread
+      @stream_connection&.disconnect
+      @processing_thread&.exit
 
       @subscriptions.each { |subscription| subscription.after_control_request :stop }
       @subscriptions = []

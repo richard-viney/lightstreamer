@@ -53,7 +53,7 @@ describe Lightstreamer::Session do
     session.connect
 
     processing_thread = session.instance_variable_get :@processing_thread
-    processing_thread.join if processing_thread
+    processing_thread&.join
 
     expect(session.connected?).to be false
     expect(received_error).to be_a(Lightstreamer::Errors::SessionEndError)

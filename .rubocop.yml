@@ -1,7 +1,9 @@
-require: rubocop-rspec
+require:
+  - rubocop-rspec
+  - rubocop-performance
 
 AllCops:
-  TargetRubyVersion: 2.2
+  TargetRubyVersion: 2.4
 
 ClassLength:
   Max: 140
@@ -22,4 +24,7 @@ RSpec/MessageSpies:
   Enabled: false
 
 RSpec/MultipleExpectations:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
   Enabled: false

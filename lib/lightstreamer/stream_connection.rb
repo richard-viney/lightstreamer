@@ -35,6 +35,7 @@ module Lightstreamer
     # {#initialize}. Raises a {LightstreamerError} subclass on failure.
     def connect
       return if @thread
+
       @queue.clear
 
       @connect_result_mutex.synchronize do
@@ -132,8 +133,8 @@ module Lightstreamer
       options[:expects] = 200
 
       Excon.post url, options
-    rescue Excon::Error => error
-      @error = Errors::ConnectionError.new error.message
+    rescue Excon::Error => e
+      @error = Errors::ConnectionError.new e.message
     end
 
     def signal_connect_result_ready
@@ -141,7 +142,7 @@ module Lightstreamer
     end
 
     def process_stream_line(line)
-      return if line =~ /^(PROBE|Preamble:.*)$/
+      return if /^(PROBE|Preamble:.*)$/.match?(line)
 
       if @header
         process_header_line line
@@ -164,15 +165,16 @@ module Lightstreamer
       @error = @header.error
 
       return if header_incomplete
+
       @header = nil
 
       signal_connect_result_ready
     end
 
     def process_body_line(line)
-      if line =~ /^LOOP( \d+|)$/
+      if /^LOOP( \d+|)$/.match?(line)
         @loop = true
-      elsif line =~ /^END( \d+|)$/
+      elsif /^END( \d+|)$/.match?(line)
         @error = Errors::SessionEndError.new line[4..-1]
       elsif !line.empty?
         @queue.push line

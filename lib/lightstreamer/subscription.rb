@@ -142,7 +142,7 @@ module Lightstreamer
       index = @items.index item_name
       raise ArgumentError, 'Unknown item' unless index
 
-      @mutex.synchronize { @data[index].data && @data[index].data.dup }
+      @mutex.synchronize { @data[index].data&.dup }
     end
 
     # Sets the current data for the item with the specified name. This is only allowed when {mode} is `:command` or

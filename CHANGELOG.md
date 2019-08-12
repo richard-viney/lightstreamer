@@ -2,7 +2,8 @@
 
 ### 0.15 — Unreleased
 
-- 
+- Updated supported Ruby version range to 2.4 - 2.6.
+- Switched to `cc-test-reporter` now that the `codeclimate-test-reporter` gem has been deprecated.
 
 ### 0.14 — December 7, 2016
 

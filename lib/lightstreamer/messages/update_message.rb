@@ -52,7 +52,7 @@ module Lightstreamer
         return '' if value == '$'
         return nil if value == '#'
 
-        value = value[1..-1] if value =~ /^(\$|#)/
+        value = value[1..-1] if /^(\$|#)/.match?(value)
 
         decode_escape_sequences value
       end
