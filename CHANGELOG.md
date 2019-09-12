@@ -1,6 +1,6 @@
 # Lightstreamer Changelog
 
-### 0.15 — Unreleased
+### 0.15 — September 12, 2019
 
 - Updated supported Ruby version range to 2.4 - 2.6.
 - Switched to `cc-test-reporter` now that the `codeclimate-test-reporter` gem has been deprecated.
