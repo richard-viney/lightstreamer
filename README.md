@@ -115,10 +115,10 @@ Gem created by Richard Viney. All contributions welcome.
 [gem-badge]: https://badge.fury.io/rb/lightstreamer.svg
 [travis-ci-link]: http://travis-ci.org/richard-viney/lightstreamer
 [travis-ci-badge]: https://travis-ci.org/richard-viney/lightstreamer.svg?branch=master
-[test-coverage-link]: https://codeclimate.com/github/richard-viney/lightstreamer/coverage
-[test-coverage-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/coverage.svg
+[test-coverage-link]: https://codeclimate.com/github/richard-viney/lightstreamer/test_coverage
+[test-coverage-badge]: https://api.codeclimate.com/v1/badges/75ed2d421612ef3be0c1/test_coverage
 [code-climate-link]: https://codeclimate.com/github/richard-viney/lightstreamer
-[code-climate-badge]: https://codeclimate.com/github/richard-viney/lightstreamer/badges/gpa.svg
+[code-climate-badge]: https://api.codeclimate.com/v1/badges/75ed2d421612ef3be0c1/maintainability
 [documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer
 [documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=master
 [license-link]: https://github.com/richard-viney/lightstreamer/blob/master/LICENSE.md
