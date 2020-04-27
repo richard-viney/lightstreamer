@@ -3,16 +3,17 @@ require:
   - rubocop-performance
 
 AllCops:
-  TargetRubyVersion: 2.4
+  NewCops: enable
+  TargetRubyVersion: 2.5
 
-ClassLength:
-  Max: 140
+Layout/LineLength:
+  Max: 120
 
 Metrics/BlockLength:
   Enabled: false
 
-Metrics/LineLength:
-  Max: 120
+Metrics/ClassLength:
+  Max: 140
 
 RSpec/ExampleLength:
   Enabled: false

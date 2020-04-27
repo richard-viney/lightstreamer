@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :subscription, class: Lightstreamer::Subscription do
+  factory :subscription, class: 'Lightstreamer::Subscription' do
     session { nil }
     items { [] }
     fields { [] }

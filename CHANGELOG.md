@@ -1,5 +1,10 @@
 # Lightstreamer Changelog
 
+### 0.16 - Unreleased
+
+- Updated supported Ruby version range to 2.5 - 2.7.
+- Updated dependency versions.
+
 ### 0.15 — September 12, 2019
 
 - Updated supported Ruby version range to 2.4 - 2.6.
