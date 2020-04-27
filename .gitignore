@@ -1,9 +1,9 @@
-/*.gem
 *.rbc
 /.bundle
 /.yardoc
+/*.gem
 /coverage
 /doc
-/Gemfile.lock
+/gems.locked
 /tmp
 /vendor

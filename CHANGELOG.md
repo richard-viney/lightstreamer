@@ -1,6 +1,11 @@
 # Lightstreamer Changelog
 
-### 0.16 - April 27, 2020
+### 0.17 — Unreleased
+
+- Switched from Travis CI to GitHub Actions.
+- Removed CodeClimate.
+
+### 0.16 — April 27, 2020
 
 - Updated supported Ruby version range to 2.5 - 2.7.
 - Updated dependency versions.

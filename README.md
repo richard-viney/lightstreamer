@@ -1,9 +1,7 @@
 # Ruby Lightstreamer Client Gem
 
 [![Gem][gem-badge]][gem-link]
-[![Build Status][travis-ci-badge]][travis-ci-link]
-[![Test Coverage][test-coverage-badge]][test-coverage-link]
-[![Code Climate][code-climate-badge]][code-climate-link]
+[![Build Status][ci-badge]][ci-link]
 [![Documentation][documentation-badge]][documentation-link]
 [![License][license-badge]][license-link]
 
@@ -113,12 +111,8 @@ Gem created by Richard Viney. All contributions welcome.
 
 [gem-link]: https://rubygems.org/gems/lightstreamer
 [gem-badge]: https://badge.fury.io/rb/lightstreamer.svg
-[travis-ci-link]: http://travis-ci.org/richard-viney/lightstreamer
-[travis-ci-badge]: https://travis-ci.org/richard-viney/lightstreamer.svg?branch=master
-[test-coverage-link]: https://codeclimate.com/github/richard-viney/lightstreamer/test_coverage
-[test-coverage-badge]: https://api.codeclimate.com/v1/badges/75ed2d421612ef3be0c1/test_coverage
-[code-climate-link]: https://codeclimate.com/github/richard-viney/lightstreamer
-[code-climate-badge]: https://api.codeclimate.com/v1/badges/75ed2d421612ef3be0c1/maintainability
+[ci-link]: https://github.com/richard-viney/lightstreamer/actions
+[ci-badge]: https://github.com/richard-viney/lightstreamer/workflows/ci/badge.svg
 [documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer
 [documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=master
 [license-link]: https://github.com/richard-viney/lightstreamer/blob/master/LICENSE.md
