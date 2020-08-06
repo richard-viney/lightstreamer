@@ -37,8 +37,8 @@ $ gem install lightstreamer
 
 The two primary classes that make up the public API are:
 
-- [`Lightstreamer::Session`](http://www.rubydoc.info/github/richard-viney/lightstreamer/master/Lightstreamer/Session)
-- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/richard-viney/lightstreamer/master/Lightstreamer/Subscription)
+- [`Lightstreamer::Session`](http://www.rubydoc.info/github/richard-viney/lightstreamer/main/Lightstreamer/Session)
+- [`Lightstreamer::Subscription`](http://www.rubydoc.info/github/richard-viney/lightstreamer/main/Lightstreamer/Subscription)
 
 The following code demonstrates how to create a Lightstreamer session, build a subscription, then use a thread-safe
 queue to print streaming output as it arrives.
@@ -103,7 +103,7 @@ lightstreamer help stream
 
 ## Documentation
 
-API documentation is available [here](http://www.rubydoc.info/github/richard-viney/lightstreamer/master).
+API documentation is available [here](http://www.rubydoc.info/github/richard-viney/lightstreamer/main).
 
 ## Contributors
 
@@ -112,8 +112,8 @@ Gem created by Richard Viney. All contributions welcome.
 [gem-link]: https://rubygems.org/gems/lightstreamer
 [gem-badge]: https://badge.fury.io/rb/lightstreamer.svg
 [ci-link]: https://github.com/richard-viney/lightstreamer/actions
-[ci-badge]: https://github.com/richard-viney/lightstreamer/workflows/ci/badge.svg
-[documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer
-[documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=master
-[license-link]: https://github.com/richard-viney/lightstreamer/blob/master/LICENSE.md
+[ci-badge]: https://github.com/richard-viney/lightstreamer/workflows/ci/badge.svg?branch=main
+[documentation-link]: https://inch-ci.org/github/richard-viney/lightstreamer?branch=main
+[documentation-badge]: https://inch-ci.org/github/richard-viney/lightstreamer.svg?branch=main
+[license-link]: https://github.com/richard-viney/lightstreamer/blob/main/LICENSE.md
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
