@@ -1,6 +1,6 @@
 describe Lightstreamer::Subscription do
-  let(:session) { instance_double 'Lightstreamer::Session', session_id: 'id' }
-  let(:subscription) { build :subscription, session: session, items: %i[item1 item2], fields: %i[field1 field2] }
+  let(:session) { instance_double Lightstreamer::Session, session_id: 'id' }
+  let(:subscription) { build(:subscription, session: session, items: %i[item1 item2], fields: %i[field1 field2]) }
 
   it 'assigns consecutive unique ids to subscriptions' do
     initial_id = build(:subscription).id
@@ -20,10 +20,10 @@ describe Lightstreamer::Subscription do
 
   it 'starts and stops a subscription' do
     expect(session).to receive(:control_request)
-      .with(LS_session: 'id', LS_op: :add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %i[item1 item2],
-            LS_snapshot: false, LS_schema: %i[field1 field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
-            LS_selector: nil)
-    expect(session).to receive(:control_request).with(LS_session: 'id', LS_op: :delete, LS_table: subscription.id)
+      .with({ LS_session: 'id', LS_op: :add, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %i[item1 item2],
+              LS_snapshot: false, LS_schema: %i[field1 field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+              LS_selector: nil })
+    expect(session).to receive(:control_request).with({ LS_session: 'id', LS_op: :delete, LS_table: subscription.id })
 
     expect(subscription.active).to be_falsey
     subscription.start
@@ -34,10 +34,10 @@ describe Lightstreamer::Subscription do
 
   it 'starts and unsilences a silent subscription' do
     expect(session).to receive(:control_request)
-      .with(LS_session: 'id', LS_op: :add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %i[item1 item2],
-            LS_selector: nil, LS_schema: %i[field1 field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
-            LS_snapshot: true)
-    expect(session).to receive(:control_request).with(LS_session: 'id', LS_op: :start, LS_table: subscription.id)
+      .with({ LS_session: 'id', LS_op: :add_silent, LS_table: subscription.id, LS_mode: 'MERGE', LS_id: %i[item1 item2],
+              LS_selector: nil, LS_schema: %i[field1 field2], LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+              LS_snapshot: true })
+    expect(session).to receive(:control_request).with({ LS_session: 'id', LS_op: :start, LS_table: subscription.id })
 
     subscription.start silent: true, snapshot: true
     subscription.unsilence
@@ -109,8 +109,8 @@ describe Lightstreamer::Subscription do
   end
 
   it 'sets distinct item data' do
-    command_subscription = build :subscription, session: session, mode: :command, items: [:item1],
-                                                fields: %i[key command test]
+    command_subscription = build(:subscription, session: session, mode: :command, items: [:item1],
+                                                fields: %i[key command test])
 
     command_subscription.set_item_data :item1, [{ key: 1, test: 2 }]
     expect(command_subscription.item_data(:item1)).to eq([{ key: 1, test: 2 }])

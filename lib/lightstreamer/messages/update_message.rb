@@ -25,7 +25,7 @@ module Lightstreamer
         message.item_index = match.captures[0].to_i - 1
         return unless message.item_index < items.size
 
-        message.data = parse_field_values match.captures[1..-1], fields
+        message.data = parse_field_values match.captures[1..], fields
 
         message
       end
@@ -52,7 +52,7 @@ module Lightstreamer
         return '' if value == '$'
         return nil if value == '#'
 
-        value = value[1..-1] if /^(\$|#)/.match?(value)
+        value = value[1..] if /^(\$|#)/.match?(value)
 
         decode_escape_sequences value
       end
@@ -63,7 +63,7 @@ module Lightstreamer
         string = decode_surrogate_pair_escape_sequences string
 
         string.gsub(/\\u[A-F\d]{4}/i) do |escape_sequence|
-          codepoint = escape_sequence[2..-1].hex
+          codepoint = escape_sequence[2..].hex
 
           # Codepoints greater than 0xD7FF are invalid and so are removed
           codepoint < 0xD800 ? [codepoint].pack('U') : ''

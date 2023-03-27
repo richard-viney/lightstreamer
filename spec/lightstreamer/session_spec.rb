@@ -5,16 +5,18 @@ describe Lightstreamer::Session do
   end
 
   let(:stream_connection) do
-    instance_double 'Lightstreamer::StreamConnection', session_id: 'session', control_address: 'http://a.com'
+    instance_double Lightstreamer::StreamConnection, session_id: 'session', control_address: 'http://a.com'
   end
 
-  let(:subscription) { build :subscription, session: session, items: ['item'], fields: ['field'], selector: 'selector' }
+  let(:subscription) do
+    build(:subscription, session: session, items: ['item'], fields: ['field'], selector: 'selector')
+  end
 
   it 'connects to a stream, processes some data, then disconnects' do
     expect(Lightstreamer::StreamConnection).to receive(:new).with(session).and_return(stream_connection)
     expect(stream_connection).to receive(:connect)
 
-    on_message_result_callback = instance_double 'Proc'
+    on_message_result_callback = instance_double Proc
     expect(on_message_result_callback).to receive(:call).with('sequence', [5], nil)
     session.on_message_result { |*args| on_message_result_callback.call(*args) }
 
@@ -106,22 +108,24 @@ describe Lightstreamer::Session do
 
     it 'sends a synchronous message' do
       expect(Lightstreamer::PostRequest).to receive(:execute)
-        .with('http://a.com/lightstreamer/send_message.txt', LS_session: 'session', LS_message: 'message')
+        .with('http://a.com/lightstreamer/send_message.txt', { LS_session: 'session', LS_message: 'message' })
 
       session.send_message 'message'
     end
 
     it 'sends an synchronous message' do
       expect(Lightstreamer::PostRequest).to receive(:execute)
-        .with('http://a.com/lightstreamer/send_message.txt', LS_session: 'session', LS_message: 'message',
-                                                             LS_sequence: 'sequence', LS_msg_prog: 1, LS_max_wait: 500)
+        .with(
+          'http://a.com/lightstreamer/send_message.txt',
+          { LS_session: 'session', LS_message: 'message', LS_sequence: 'sequence', LS_msg_prog: 1, LS_max_wait: 500 }
+        )
 
       session.send_message 'message', async: true, sequence: 'sequence', number: 1, max_wait: 500
     end
 
     it 'sends control requests' do
       expect(Lightstreamer::PostRequest).to receive(:execute)
-        .with('http://a.com/lightstreamer/control.txt', LS_session: 'session', LS_op: :operation, test: 1)
+        .with('http://a.com/lightstreamer/control.txt', { LS_session: 'session', LS_op: :operation, test: 1 })
 
       session.control_request LS_op: :operation, test: 1
     end
@@ -146,17 +150,17 @@ describe Lightstreamer::Session do
       subscriptions = [subscription, build(:subscription, session: session), build(:subscription, session: session)]
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :add, LS_table: subscriptions[0].id, LS_mode: 'MERGE', LS_id: %w[item],
-              LS_schema: %w[field], LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
-              LS_snapshot: false)
+        .with({ LS_session: 'session', LS_op: :add, LS_table: subscriptions[0].id, LS_mode: 'MERGE', LS_id: %w[item],
+                LS_schema: %w[field], LS_selector: 'selector', LS_data_adapter: nil, LS_requested_max_frequency: 0.0,
+                LS_snapshot: false })
         .and_return('body1')
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :start, LS_table: subscriptions[1].id)
+        .with({ LS_session: 'session', LS_op: :start, LS_table: subscriptions[1].id })
         .and_return('body2')
 
       expect(Lightstreamer::PostRequest).to receive(:request_body)
-        .with(LS_session: 'session', LS_op: :delete, LS_table: subscriptions[2].id)
+        .with({ LS_session: 'session', LS_op: :delete, LS_table: subscriptions[2].id })
         .and_return('body3')
 
       expect(Lightstreamer::PostRequest).to receive(:execute_multiple)
@@ -168,9 +172,9 @@ describe Lightstreamer::Session do
                                                      { subscription: subscriptions[2], action: :stop }]
 
       expect(errors.size).to eq(3)
-      expect(errors[0]).to be nil
+      expect(errors[0]).to be_nil
       expect(errors[1]).to be_a(Lightstreamer::Errors::InvalidDataAdapterError)
-      expect(errors[2]).to be nil
+      expect(errors[2]).to be_nil
 
       expect(subscriptions[0].active).to be_truthy
       expect(subscriptions[2].active).to be_falsey

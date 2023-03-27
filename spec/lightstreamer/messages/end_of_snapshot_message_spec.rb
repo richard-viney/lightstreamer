@@ -8,7 +8,7 @@ describe Lightstreamer::EndOfSnapshotMessage do
 
   it 'rejects invalid end-of-snapshot messages' do
     ['', '1,1,EO', '18,20,EOS', '18,10,EOS '].each do |line|
-      expect(described_class.parse(line, 18, items)).to be nil
+      expect(described_class.parse(line, 18, items)).to be_nil
     end
   end
 end

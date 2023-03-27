@@ -48,16 +48,16 @@ module Lightstreamer
       def create_session
         @session = Lightstreamer::Session.new session_options
         @session.connect
-        @session.on_message_result(&method(:on_message_result))
-        @session.on_error(&method(:on_error))
+        @session.on_message_result { |sequence, numbers, error| on_message_result sequence, numbers, error }
+        @session.on_error { |error| on_error error }
       end
 
       def create_subscription
         subscription = @session.build_subscription subscription_options
 
-        subscription.on_data(&method(:on_data))
-        subscription.on_overflow(&method(:on_overflow))
-        subscription.on_end_of_snapshot(&method(:on_end_of_snapshot))
+        subscription.on_data { |sub, item_name, item_data, new_data| on_data sub, item_name, item_data, new_data }
+        subscription.on_overflow { |sub, item_name, overflow_size| on_overflow sub, item_name, overflow_size }
+        subscription.on_end_of_snapshot { |sub, item_name| on_end_of_snapshot sub, item_name }
 
         subscription.start
       end

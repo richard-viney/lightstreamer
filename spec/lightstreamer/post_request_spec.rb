@@ -1,6 +1,6 @@
 describe Lightstreamer::PostRequest do
   def build_response(body)
-    instance_double 'Excon::Response', body: body
+    instance_double Excon::Response, body: body
   end
 
   it 'sends a single request' do
@@ -48,7 +48,7 @@ describe Lightstreamer::PostRequest do
     errors = described_class.execute_multiple 'http://a.com', %w[A B C]
 
     expect(errors.size).to eq(3)
-    expect(errors[0]).to be nil
+    expect(errors[0]).to be_nil
     expect(errors[1]).to be_a(Lightstreamer::Errors::UnknownAdapterSetError)
     expect(errors[2]).to be_a(Lightstreamer::LightstreamerError)
     expect(errors[2].message).to eq('INVALID RESPONSE')

@@ -21,7 +21,7 @@ describe Lightstreamer::UpdateMessage do
     }.each do |line, result|
       message = described_class.parse line, 18, items, fields
 
-      expect(message).not_to be nil
+      expect(message).not_to be_nil
       expect(message.item_index).to eq(result[:item_index])
       expect(message.data).to eq(result[:data])
     end
@@ -33,7 +33,7 @@ describe Lightstreamer::UpdateMessage do
       '1,1||',
       '18,2|'
     ].each do |line|
-      expect(described_class.parse(line, 18, items, fields)).to be nil
+      expect(described_class.parse(line, 18, items, fields)).to be_nil
     end
   end
 end

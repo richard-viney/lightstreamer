@@ -4,7 +4,7 @@ describe Lightstreamer::SendMessageOutcomeMessage do
 
     expect(message.sequence).to eq('Name_123')
     expect(message.numbers).to eq([99])
-    expect(message.error).to be nil
+    expect(message.error).to be_nil
   end
 
   it 'parses a failure message' do
@@ -24,7 +24,7 @@ describe Lightstreamer::SendMessageOutcomeMessage do
 
   it 'rejects invalid messages' do
     ['', 'DONE', 'MSG,,99,DONE', 'MSG,-,99,DONE', 'MSG,Name,99,ERR,A,A'].each do |line|
-      expect(described_class.parse(line)).to be nil
+      expect(described_class.parse(line)).to be_nil
     end
   end
 end

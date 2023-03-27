@@ -129,7 +129,7 @@ module Lightstreamer
       @header = StreamConnectionHeader.new
 
       buffer = StreamBuffer.new
-      options[:response_block] = ->(data, _, _) { buffer.process data, &method(:process_stream_line) }
+      options[:response_block] = ->(data, _, _) { buffer.process(data) { |line| process_stream_line line } }
       options[:expects] = 200
 
       Excon.post url, options
@@ -175,7 +175,7 @@ module Lightstreamer
       if /^LOOP( \d+|)$/.match?(line)
         @loop = true
       elsif /^END( \d+|)$/.match?(line)
-        @error = Errors::SessionEndError.new line[4..-1]
+        @error = Errors::SessionEndError.new line[4..]
       elsif !line.empty?
         @queue.push line
       end

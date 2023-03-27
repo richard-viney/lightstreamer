@@ -6,14 +6,14 @@ describe Lightstreamer::CLI::Main do
                             polling_enabled: false
   end
 
-  let(:session) { instance_double 'Lightstreamer::Session' }
-  let(:subscription) { instance_double 'Lightstreamer::Subscription' }
+  let(:session) { instance_double Lightstreamer::Session }
+  let(:subscription) { instance_double Lightstreamer::Subscription }
   let(:queue) { Queue.new }
 
   it 'prints stream data' do
     expect(Lightstreamer::Session).to receive(:new)
-      .with(server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set',
-            requested_maximum_bandwidth: nil, polling_enabled: false)
+      .with({ server_url: 'http://a.com', username: 'username', password: 'password', adapter_set: 'adapter-set',
+              requested_maximum_bandwidth: nil, polling_enabled: false })
       .and_return(session)
 
     expect(session).to receive(:on_message_result)
@@ -21,8 +21,8 @@ describe Lightstreamer::CLI::Main do
     expect(session).to receive(:connect)
     expect(session).to receive(:session_id).and_return('A')
     expect(session).to receive(:build_subscription)
-      .with(items: ['item'], fields: ['field'], mode: :merge, data_adapter: 'adapter', maximum_update_frequency: nil,
-            selector: nil, snapshot: nil)
+      .with({ items: ['item'], fields: ['field'], mode: :merge, data_adapter: 'adapter', maximum_update_frequency: nil,
+              selector: nil, snapshot: nil })
       .and_return(subscription)
 
     expect(subscription).to receive(:on_data)

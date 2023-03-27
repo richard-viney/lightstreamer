@@ -13,19 +13,20 @@ Gem::Specification.new do |s|
   s.files = Dir['bin/lightstreamer', 'lib/**/*.rb', 'CHANGELOG.md', 'LICENSE.md', 'README.md']
   s.executables = ['lightstreamer']
 
-  s.required_ruby_version = '>= 2.5.0'
+  s.required_ruby_version = '>= 2.7'
 
-  s.add_runtime_dependency 'excon', '~> 0.73'
+  s.add_runtime_dependency 'excon', '~> 0.99'
   s.add_runtime_dependency 'thor', '~> 1.0'
 
-  s.add_development_dependency 'factory_bot', '~> 5.0'
-  s.add_development_dependency 'github-markup', '~> 3.0'
-  s.add_development_dependency 'redcarpet', '~> 3.3'
-  s.add_development_dependency 'rspec', '~> 3.8'
-  s.add_development_dependency 'rspec-mocks', '~> 3.8'
-  s.add_development_dependency 'rubocop', '~> 0.82'
-  s.add_development_dependency 'rubocop-performance', '~> 1.4'
-  s.add_development_dependency 'rubocop-rspec', '~> 1.35'
-  s.add_development_dependency 'simplecov', '~> 0.18'
+  s.add_development_dependency 'factory_bot', '~> 6.2'
+  s.add_development_dependency 'github-markup', '~> 4.0'
+  s.add_development_dependency 'redcarpet', '~> 3.6'
+  s.add_development_dependency 'rspec', '~> 3.12'
+  s.add_development_dependency 'rspec-mocks', '~> 3.12'
+  s.add_development_dependency 'rubocop', '~> 1.48'
+  s.add_development_dependency 'rubocop-performance', '~> 1.16'
+  s.add_development_dependency 'rubocop-rspec', '~> 2.19'
+  s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'yard', '~> 0.9'
+  s.metadata['rubygems_mfa_required'] = 'true'
 end

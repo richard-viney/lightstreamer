@@ -21,7 +21,7 @@ describe Lightstreamer::OverflowMessage do
       '18,20,OV5',
       '18,10,OV999 ABC'
     ].each do |line|
-      expect(described_class.parse(line, 18, items)).to be nil
+      expect(described_class.parse(line, 18, items)).to be_nil
     end
   end
 end
