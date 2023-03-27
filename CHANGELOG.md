@@ -1,7 +1,9 @@
 # Lightstreamer Changelog
 
-### 0.17 — Unreleased
+### 0.17 — March 27, 2023
 
+- Updated supported Ruby version range to 2.7 - 3.2.
+- Updated dependency versions.
 - Switched from Travis CI to GitHub Actions.
 - Removed CodeClimate.
 
